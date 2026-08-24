@@ -859,7 +859,8 @@
     const secretPopup = document.getElementById('secret-popup');
     const closeSecret = document.getElementById('close-secret');
 
-    document.addEventListener('click', () => {
+    document.addEventListener('click', (e) => {
+      if (e.target.closest('#unlock-card') || e.target.closest('a') || e.target.closest('button') || e.target.closest('input') || e.target.closest('.tile')) return;
       secretTapCount++;
       clearTimeout(secretTapTimer);
 
