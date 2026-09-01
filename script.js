@@ -1,79 +1,349 @@
 // ══════════════════════════════════════════
-    // LETTER-BY-LETTER "Happy Birthday!" REVEAL
-    // ══════════════════════════════════════════
-    (function initHBReveal() {
-      const titleEl = document.getElementById('hb-title');
-      const words = ['Happy', 'Birthday!'];
-      const allLetterEls = [];
+// LETTER-BY-LETTER "Happy Birthday!" REVEAL
+// ══════════════════════════════════════════
+let hbRevealedAlready = false;
 
-      words.forEach((word, wi) => {
-        const wordSpan = document.createElement('span');
-        wordSpan.className = 'hb-word';
+function runHBReveal() {
+  if (hbRevealedAlready) return;
+  hbRevealedAlready = true;
 
-        for (let i = 0; i < word.length; i++) {
-          const span = document.createElement('span');
-          span.className = 'hb-letter';
-          span.textContent = word[i];
-          wordSpan.appendChild(span);
-          allLetterEls.push(span);
-        }
+  const titleEl = document.getElementById('hb-title');
+  if (!titleEl) return;
+  titleEl.innerHTML = '';
+  const words = ['Happy', 'Birthday!'];
+  const allLetterEls = [];
 
-        titleEl.appendChild(wordSpan);
+  words.forEach((word, wi) => {
+    const wordSpan = document.createElement('span');
+    wordSpan.className = 'hb-word';
 
-        // Add a <br> between words
-        if (wi < words.length - 1) {
-          titleEl.appendChild(document.createElement('br'));
-        }
+    for (let i = 0; i < word.length; i++) {
+      const span = document.createElement('span');
+      span.className = 'hb-letter';
+      span.textContent = word[i];
+      wordSpan.appendChild(span);
+      allLetterEls.push(span);
+    }
+
+    titleEl.appendChild(wordSpan);
+
+    // Add a <br> between words
+    if (wi < words.length - 1) {
+      titleEl.appendChild(document.createElement('br'));
+    }
+  });
+
+  // Stagger the animation: each letter appears 100ms after the previous
+  const baseDelay = 200; // initial delay before first letter
+  const stagger = 100;   // ms between each letter
+  const animDuration = 650; // matches CSS animation duration
+
+  allLetterEls.forEach((el, i) => {
+    const delay = baseDelay + i * stagger;
+    setTimeout(() => {
+      el.classList.add('animate');
+      // After the reveal animation ends, switch to the shimmer loop
+      setTimeout(() => {
+        el.classList.remove('animate');
+        el.classList.add('revealed');
+      }, animDuration + 50);
+    }, delay);
+  });
+}
+
+// ══════════════════════════════════════════
+// ══════════════════════════════════════════
+// SCRATCH / ERASE TROLL OVERLAY (FINGER.GIF)
+// ══════════════════════════════════════════
+function initScratchCover() {
+  const overlay = document.getElementById('scratch-overlay');
+  const canvas = document.getElementById('scratch-canvas');
+  const quickBtn = document.getElementById('btn-quick-erase');
+  const pctText = document.getElementById('scratch-pct-text');
+  const bgGif = document.getElementById('scratch-bg-gif');
+  const funkyTitle = document.getElementById('funky-name-display');
+  const bottomBar = document.querySelector('.scratch-bottom-bar');
+  const nameContainer = document.querySelector('.funky-name-container');
+
+  if (!overlay || !canvas) {
+    runHBReveal();
+    return;
+  }
+
+  // ── ARRAY OF FUNKY NAMES (CYCLES ONLY OVER GIF) ──
+  const funkyNames = [
+    "Happy Birthday Tatti 💩",
+  ];
+
+  let funkyIndex = 0;
+  let funkyInterval = null;
+
+  if (funkyTitle) {
+    funkyTitle.textContent = funkyNames[0];
+    funkyInterval = setInterval(() => {
+      if (isRevealed) {
+        clearInterval(funkyInterval);
+        return;
+      }
+      funkyIndex = (funkyIndex + 1) % funkyNames.length;
+      funkyTitle.classList.add('changing');
+      setTimeout(() => {
+        funkyTitle.textContent = funkyNames[funkyIndex];
+        funkyTitle.classList.remove('changing');
+      }, 300);
+    }, 1800);
+  }
+
+  const ctx = canvas.getContext('2d');
+  let isDrawing = false;
+  let isRevealed = false;
+  let totalDistanceScratched = 0;
+  let lastX = 0, lastY = 0;
+
+  function resizeCanvas() {
+    canvas.width = window.innerWidth;
+    canvas.height = window.innerHeight;
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  }
+
+  resizeCanvas();
+  window.addEventListener('resize', resizeCanvas);
+
+  function spawnEraserParticle(x, y) {
+    const emojis = ['🧼', '🧽', '✨', '🫧', '💨', '🌸'];
+    const p = document.createElement('div');
+    p.className = 'scratch-particle';
+    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+    p.style.left = x + 'px';
+    p.style.top = y + 'px';
+    const dx = (Math.random() - 0.5) * 80 + 'px';
+    const dy = (Math.random() - 0.5) * 80 + 'px';
+    p.style.setProperty('--dx', dx);
+    p.style.setProperty('--dy', dy);
+    document.body.appendChild(p);
+    setTimeout(() => p.remove(), 700);
+  }
+
+  function updateScratchProgress(amount) {
+    if (isRevealed) return;
+    totalDistanceScratched += amount;
+    // Calculate progress up to 100%
+    const targetDistance = Math.min(window.innerWidth * 1.4, 1500);
+    const pct = Math.min(100, Math.round((totalDistanceScratched / targetDistance) * 100));
+
+    if (pctText) pctText.textContent = pct + '%';
+
+    if (bgGif) {
+      const remaining = 1 - (pct / 100);
+      bgGif.style.opacity = Math.max(0.15, remaining);
+      bgGif.style.filter = `blur(${(pct / 100) * 12}px) brightness(${1 + (pct / 200)}) drop-shadow(0 15px 35px rgba(0,0,0,0.6))`;
+      const blurredBg = document.querySelector('.scratch-blurred-bg');
+      if (blurredBg) blurredBg.style.opacity = Math.max(0.1, 0.85 * remaining);
+    }
+
+    if (nameContainer) {
+      nameContainer.style.opacity = Math.max(0.2, 1 - (pct / 100));
+      nameContainer.style.transform = `scale(${1 - (pct / 600)})`;
+    }
+
+    if (bottomBar) {
+      bottomBar.style.transform = `scale(${1 - (pct / 700)})`;
+    }
+
+    if (pct >= 40 && !isRevealed) {
+      revealOriginalPage();
+    }
+  }
+
+  function revealOriginalPage() {
+    if (isRevealed) return;
+    isRevealed = true;
+
+    if (funkyInterval) clearInterval(funkyInterval);
+    if (pctText) pctText.textContent = '100%';
+
+    // Play reveal sound if available
+    const swapSound = document.getElementById('swap-sound');
+    if (swapSound) {
+      swapSound.currentTime = 0;
+      swapSound.play().catch(() => { });
+    }
+
+    // Confetti blast
+    if (typeof confetti === 'function') {
+      confetti({
+        particleCount: 80,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ['#D4788A', '#F2C4C4', '#8AAD9A', '#C89D6A', '#FFF']
       });
+      setTimeout(() => {
+        confetti({
+          particleCount: 50,
+          angle: 60,
+          spread: 55,
+          origin: { x: 0 }
+        });
+        confetti({
+          particleCount: 50,
+          angle: 120,
+          spread: 55,
+          origin: { x: 1 }
+        });
+      }, 250);
+    }
 
-      // Stagger the animation: each letter appears 100ms after the previous
-      const baseDelay = 500; // initial delay before first letter
-      const stagger = 100;   // ms between each letter
-      const animDuration = 650; // matches CSS animation duration
+    overlay.classList.add('revealed');
+    document.body.classList.remove('scratch-active');
 
-      allLetterEls.forEach((el, i) => {
-        const delay = baseDelay + i * stagger;
-        setTimeout(() => {
-          el.classList.add('animate');
-          // After the reveal animation ends, switch to the shimmer loop
-          setTimeout(() => {
-            el.classList.remove('animate');
-            el.classList.add('revealed');
-          }, animDuration + 50);
-        }, delay);
-      });
-    })();
+    setTimeout(() => {
+      overlay.style.display = 'none';
+      runHBReveal();
+    }, 750);
+  }
+
+  function startErase(x, y) {
+    isDrawing = true;
+    lastX = x;
+    lastY = y;
+    spawnEraserParticle(x, y);
+    updateScratchProgress(15);
+  }
+
+  function continueErase(x, y) {
+    if (!isDrawing || isRevealed) return;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
+    ctx.lineWidth = 45;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(lastX, lastY);
+    ctx.lineTo(x, y);
+    ctx.stroke();
+    ctx.restore();
+
+    const dist = Math.hypot(x - lastX, y - lastY);
+    if (dist > 6) {
+      spawnEraserParticle(x, y);
+      updateScratchProgress(dist);
+      lastX = x;
+      lastY = y;
+    }
+  }
+
+  function stopErase() {
+    isDrawing = false;
+  }
+
+  // Pointer & Touch Events
+  canvas.addEventListener('mousedown', (e) => {
+    startErase(e.clientX, e.clientY);
+  });
+  window.addEventListener('mousemove', (e) => {
+    if (isDrawing) continueErase(e.clientX, e.clientY);
+  });
+  window.addEventListener('mouseup', stopErase);
+
+  canvas.addEventListener('touchstart', (e) => {
+    if (e.touches.length > 0) {
+      const t = e.touches[0];
+      startErase(t.clientX, t.clientY);
+    }
+  }, { passive: true });
+
+  canvas.addEventListener('touchmove', (e) => {
+    if (e.touches.length > 0 && isDrawing) {
+      const t = e.touches[0];
+      continueErase(t.clientX, t.clientY);
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  canvas.addEventListener('touchend', stopErase);
+  canvas.addEventListener('touchcancel', stopErase);
+
+  if (quickBtn) {
+    quickBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      revealOriginalPage();
+    });
+  }
+}
+
+// Initialize scratch cover
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initScratchCover);
+} else {
+  initScratchCover();
+}
 
     // ══════════════════════════════════════════
     // DATA — edit memories here
     // ══════════════════════════════════════════
     const memories = [
       {
-        date: "August 2021",
-        title: "The Day We Met",
-        description: "I still remember how awkward we were before realizing we had the exact same chaotic energy. The rest is history.",
-        image_url: "assests/Screenshot (21).png",
+        date: "Chapter 1",
+        title: "Where It All Began",
+        description: "Throwing it back to the golden days. We had no idea we'd end up this chaotic together.",
+        image_url: "assests/old1.jpeg",
         emoji: "🌸"
       },
       {
-        date: "December 2022",
-        title: "That Late-Night Road Trip",
-        description: "Getting completely lost, eating terrible gas station snacks, blasting our playlist until our voices gave out.",
-        image_url: "assests/Screenshot (22).png",
-        emoji: "🌙"
+        date: "Unfiltered Throwback",
+        title: "Classic Moments",
+        description: "Back when life was simpler, conversations were endless, and we took the most candid memories.",
+        image_url: "assests/old2.jpeg",
+        emoji: "📸"
       },
       {
-        date: "July 2023",
-        title: "Summer Concert",
-        description: "The best night ever. We waited 4 hours in line and it was absolutely worth every second.",
-        image_url: "assests/Screenshot (23).png",
+        date: "Live Drama",
+        title: "Pure Unfiltered Chaos",
+        description: "Exhibit A: Why we can never be left alone in public without causing a funny scene.",
+        video_url: "assests/vid_1.mp4",
+        emoji: "🎬"
+      },
+      {
+        date: "Trip Diaries",
+        title: "Dehradun Escape",
+        description: "Chilly breeze, scenic mountain roads, getting lost, and making memories that stay forever.",
+        image_url: "assests/dehradun.jpeg",
+        emoji: "🏔️"
+      },
+      {
+        date: "Foodie Files",
+        title: "Soya Chaap & Food Cravings",
+        description: "Our mutual love for delicious food and never-ending street food dates. Zero regrets.",
+        image_url: "assests/soyachap.jpeg",
+        emoji: "🍢"
+      },
+      {
+        date: "Vibe Check",
+        title: "Crazy Laughs & Good Times",
+        description: "Those random moments where we laughed so hard our stomachs hurt.",
+        video_url: "assests/vid_2.mp4",
         emoji: "✨"
       },
       {
-        date: "Right Now",
-        title: "To Be Continued…",
-        description: "We have so much more to see and do. I can't wait for our next adventure together.",
-        image_url: "assests/Screenshot (24).png",
+        date: "Partners in Crime",
+        title: "The Dynamic Duo",
+        description: "Through every high, low, and silly phase — always got your back (and ready to roast you).",
+        image_url: "assests/DUO.jpeg",
+        emoji: "👯"
+      },
+      {
+        date: "Comedy Central",
+        title: "Never a Dull Moment",
+        description: "Certified comedy. If our phone galleries ever leak, our reputations are over.",
+        video_url: "assests/vid_3.mp4",
+        emoji: "🍿"
+      },
+      {
+        date: "Squad Goals",
+        title: "The Trio & Future Adventures",
+        description: "To a million more memories, endless jokes, and you living your happiest life. Happy Birthday!",
+        image_url: "assests/thetrio.jpeg",
         emoji: "🎀"
       }
     ];
@@ -139,7 +409,7 @@
           </div>
 
           <div class="w-full md:w-1/2 flex ${isEven ? 'md:justify-start' : 'md:justify-end'}">
-            <div class="polaroid group" style="transform: rotate(${isEven ? '-2.5deg' : '2.5deg'}); max-width: 320px; width:100%;">
+            <div class="polaroid group" data-index="${i}" style="transform: rotate(${isEven ? '-2.5deg' : '2.5deg'}); max-width: 320px; width:100%;" title="Click to expand">
               <div class="polaroid-tape"></div>
               ${mediaHtml}
               <span class="caption">${m.title}</span>
@@ -149,6 +419,109 @@
         </div>
       `;
     });
+
+    // ── MEDIA LIGHTBOX (POPUP FOR IMAGES & VIDEOS) ──
+    let currentLightboxIndex = 0;
+
+    function renderLightboxContent(index) {
+      const m = memories[index];
+      if (!m) return;
+      currentLightboxIndex = index;
+
+      const wrap = document.getElementById('lightbox-media-wrap');
+      const dateEl = document.getElementById('lightbox-date');
+      const titleEl = document.getElementById('lightbox-title');
+      const descEl = document.getElementById('lightbox-desc');
+
+      if (dateEl) dateEl.textContent = m.date;
+      if (titleEl) titleEl.textContent = `${m.emoji || '✨'} ${m.title}`;
+      if (descEl) descEl.textContent = m.description;
+
+      if (!wrap) return;
+
+      if (m.video_url) {
+        wrap.innerHTML = `
+          <video src="${m.video_url}" 
+                 controls autoplay playsinline
+                 ${m.image_url ? `poster="${m.image_url}"` : ''}
+                 class="w-full max-h-[55vh] object-contain block rounded-[12px]"></video>
+        `;
+        pauseBackgroundMusic();
+      } else {
+        wrap.innerHTML = `
+          <img src="${m.image_url}" alt="${m.title}" 
+               class="w-full max-h-[55vh] object-contain block rounded-[12px]" />
+        `;
+      }
+    }
+
+    function openMediaLightbox(index) {
+      const modal = document.getElementById('media-lightbox');
+      if (!modal) return;
+      renderLightboxContent(index);
+      modal.classList.add('active');
+      modal.setAttribute('aria-hidden', 'false');
+    }
+
+    function closeMediaLightbox() {
+      const modal = document.getElementById('media-lightbox');
+      if (!modal) return;
+      modal.classList.remove('active');
+      modal.setAttribute('aria-hidden', 'true');
+
+      const wrap = document.getElementById('lightbox-media-wrap');
+      if (wrap) {
+        const vid = wrap.querySelector('video');
+        if (vid) vid.pause();
+        setTimeout(() => { wrap.innerHTML = ''; }, 300);
+      }
+      resumeBackgroundMusic();
+    }
+
+    function initMediaLightbox() {
+      const modal = document.getElementById('media-lightbox');
+      const closeBtn = document.getElementById('lightbox-close');
+      const backdrop = document.getElementById('lightbox-backdrop');
+      const prevBtn = document.getElementById('lightbox-prev');
+      const nextBtn = document.getElementById('lightbox-next');
+
+      if (closeBtn) closeBtn.addEventListener('click', closeMediaLightbox);
+      if (backdrop) backdrop.addEventListener('click', closeMediaLightbox);
+
+      if (prevBtn) {
+        prevBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const newIdx = (currentLightboxIndex - 1 + memories.length) % memories.length;
+          renderLightboxContent(newIdx);
+        });
+      }
+
+      if (nextBtn) {
+        nextBtn.addEventListener('click', (e) => {
+          e.stopPropagation();
+          const newIdx = (currentLightboxIndex + 1) % memories.length;
+          renderLightboxContent(newIdx);
+        });
+      }
+
+      document.addEventListener('keydown', (e) => {
+        if (!modal || !modal.classList.contains('active')) return;
+        if (e.key === 'Escape') closeMediaLightbox();
+        if (e.key === 'ArrowLeft' && prevBtn) prevBtn.click();
+        if (e.key === 'ArrowRight' && nextBtn) nextBtn.click();
+      });
+
+      // Attach click to all polaroid cards
+      document.querySelectorAll('.polaroid').forEach(card => {
+        card.addEventListener('click', (e) => {
+          if (e.target.closest('.volume-btn')) return;
+          const idx = parseInt(card.getAttribute('data-index'), 10);
+          if (!isNaN(idx)) openMediaLightbox(idx);
+        });
+      });
+    }
+
+    initMediaLightbox();
 
     // ── VIDEO PLAYERS INITIALIZATION ──
     let bgMusicPausedByVideo = false;

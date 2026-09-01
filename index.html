@@ -18,10 +18,39 @@
   <script src="https://cdn.tailwindcss.com"></script>
   <script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.6.0/dist/confetti.browser.min.js"></script>
 
-  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="styles.css?v=2.0">
 </head>
 
-<body class="hero-bg">
+<body class="hero-bg scratch-active">
+
+  <!-- SCRATCH / ERASE OVERLAY (FULLSCREEN FINGER.GIF) -->
+  <div id="scratch-overlay">
+    <div class="scratch-blurred-bg" style="background-image: url('assests/finger.gif');"></div>
+    <img src="assests/finger.gif" alt="Surprise!" id="scratch-bg-gif" class="scratch-fullscreen-gif" />
+
+    <div class="scratch-ui-overlay">
+      <!-- Funky Name Animated Headline (Only visible when GIF is present) -->
+      <div class="funky-name-container">
+        <span class="funky-tagline">🔥 Special Birthday Dedication 🔥</span>
+        <h1 id="funky-name-display" class="funky-name-title">Happy Birthday Tatti 💩</h1>
+      </div>
+
+      <!-- Minimal Sleek Erase Helper -->
+      <div class="scratch-bottom-bar">
+        <div class="scratch-mini-meter">
+          <span class="eraser-icon">🧽</span>
+          <span class="scratch-hint-text">Rub to Erase:</span>
+          <span id="scratch-pct-text" class="scratch-pct-badge">0%</span>
+        </div>
+        <button id="btn-quick-erase" class="scratch-skip-btn">
+          ✨ Quick Reveal ✨
+        </button>
+      </div>
+    </div>
+
+    <!-- Interactive Scratch Eraser Canvas -->
+    <canvas id="scratch-canvas"></canvas>
+  </div>
 
   <div id="scroll-progress"></div>
   <div id="cinematic-vignette"></div>
@@ -168,7 +197,7 @@
 
     <div class="fade-up delay-1" id="letter-card">
       <div class="letter-paper font-display text-lg" style="color:var(--ink); line-height:32px;">
-        <p class="italic text-2xl mb-6" style="line-height:1.6;">Happy Birthday, Bestie 🎂</p>
+        <p class="italic text-2xl mb-6" style="line-height:1.6;">Happy birthday</p>
 
         <p class="mb-4">
           I wanted to make something truly special for you — something that captures even a fraction of how much you
@@ -234,6 +263,26 @@
       </p>
       <button id="close-roast" class="btn-primary w-full" style="font-size: 1rem;">I'm sorry, show me the hint
         😭</button>
+    </div>
+  </div>
+
+  <!-- MEDIA LIGHTBOX POPUP -->
+  <div id="media-lightbox" class="media-lightbox" aria-hidden="true">
+    <div class="lightbox-backdrop" id="lightbox-backdrop"></div>
+    <div class="lightbox-dialog">
+      <button class="lightbox-close" id="lightbox-close" aria-label="Close modal">×</button>
+      <button class="lightbox-nav lightbox-prev" id="lightbox-prev" aria-label="Previous">‹</button>
+      <button class="lightbox-nav lightbox-next" id="lightbox-next" aria-label="Next">›</button>
+
+      <div class="lightbox-media-wrap" id="lightbox-media-wrap">
+        <!-- Injected dynamically -->
+      </div>
+
+      <div class="lightbox-info">
+        <span class="lightbox-badge" id="lightbox-date"></span>
+        <h3 class="lightbox-title font-display" id="lightbox-title"></h3>
+        <p class="lightbox-desc" id="lightbox-desc"></p>
+      </div>
     </div>
   </div>
 
