@@ -1645,11 +1645,8 @@ const roastTitleEl = document.getElementById('roast-title');
 const roastLineEl = document.getElementById('roast-line');
 const roastLines = [
   { title: "Chiiii Gawar !!", line: "Dimag nhi hai kya? 🤡" },
-  { title: "Bestie, No.", line: "You call yourself an artist and can't even match colors? Couldn't be me." },
-  { title: "Ouchhh 🙈", line: "Even your worst painting had more structure than this attempt." },
-  { title: "Hint? HINT?", line: "Babe this is a 3x3 grid, not the Mona Lisa. Lock in." },
   { title: "Embarrassing.", line: "I've seen toddlers solve puzzles faster. With crayons. Backwards." },
-  { title: "Skill Issue.", line: "Maybe stick to digital art where undo exists, hm?" },
+  { title: "Skill Issue.", line: "Maybe stick to digital art where undo exists" },
   { title: "Tragic.", line: "This is giving 'forgot how eyes work' energy." }
 ];
 document.getElementById('btn-hint').addEventListener('click', () => {
@@ -1805,8 +1802,20 @@ if (giftBtn) {
 
   giftBtn.addEventListener('click', () => {
     confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+    if (giftBtn.parentElement) giftBtn.parentElement.style.display = 'none';
     giftBtn.style.display = 'none';
-    giftMsg.innerHTML = "Your gift is my presence in your life.<br/>You're welcome. 😎✨";
+    giftMsg.innerHTML = `
+      <div class="flex flex-col items-center">
+        <span class="text-xl md:text-2xl font-bold block mb-2" style="color:var(--ink)">Your gift is my presence in your life... Just kidding! 😎✨</span>
+        <span class="text-sm font-normal opacity-75 max-w-md block mb-4" style="color:var(--ink)">Here is your real gift — a dedicated digital studio built just for you:</span>
+        <a href="https://artist-studio.onrender.com" target="_blank" rel="noopener noreferrer" 
+           class="btn-primary inline-flex items-center gap-2"
+           style="text-decoration:none; display:inline-flex; align-items:center; gap:8px;">
+          <span>Open The Studio</span>
+          <span>🎨 🚀</span>
+        </a>
+      </div>
+    `;
     giftMsg.style.opacity = '1';
     giftMsg.style.transform = 'translateY(0)';
   });
@@ -1814,4 +1823,4 @@ if (giftBtn) {
 
 // ── CONSOLE EASTER EGG ──
 console.log("%cHey birthday girl! 🎂", "color: #D4788A; font-size: 30px; font-weight: bold; font-family: sans-serif;");
-console.log("%cI knew you'd be snooping around here. Happy Birthday! - Your Best Friend", "color: #B0687A; font-size: 16px; font-style: italic;");
+console.log("%cI knew you'd be snooping around here. Happy Birthday! - Your Friend", "color: #B0687A; font-size: 16px; font-style: italic;");
