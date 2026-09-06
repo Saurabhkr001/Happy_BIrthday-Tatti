@@ -53,114 +53,77 @@ function runHBReveal() {
 
 // ══════════════════════════════════════════
 // ══════════════════════════════════════════
-// SCRATCH / ERASE TROLL OVERLAY (FINGER.GIF)
+// TROLL OVERLAY (FINGER.GIF - TOUCH/TAP TO REVEAL)
 // ══════════════════════════════════════════
-function initScratchCover() {
-  const overlay = document.getElementById('scratch-overlay');
-  const canvas = document.getElementById('scratch-canvas');
-  const quickBtn = document.getElementById('btn-quick-erase');
-  const pctText = document.getElementById('scratch-pct-text');
-  const bgGif = document.getElementById('scratch-bg-gif');
-  const funkyTitle = document.getElementById('funky-name-display');
-  const bottomBar = document.querySelector('.scratch-bottom-bar');
-  const nameContainer = document.querySelector('.funky-name-container');
+let trollOverlayInitialized = false;
 
-  if (!overlay || !canvas) {
+function initTrollOverlay() {
+  if (trollOverlayInitialized) return;
+  trollOverlayInitialized = true;
+
+  const overlay = document.getElementById('scratch-overlay');
+  const funkyTitle = document.getElementById('funky-name-display');
+  const faahAudio = document.getElementById('faah-audio');
+
+  if (!overlay) {
     runHBReveal();
     return;
   }
 
-  // ── ARRAY OF FUNKY NAMES (CYCLES ONLY OVER GIF) ──
   const funkyNames = [
-    "Happy Birthday Tatti 💩",
+    "Guhh kha le gawar 💩",
   ];
-
-  let funkyIndex = 0;
-  let funkyInterval = null;
 
   if (funkyTitle) {
     funkyTitle.textContent = funkyNames[0];
-    funkyInterval = setInterval(() => {
-      if (isRevealed) {
-        clearInterval(funkyInterval);
-        return;
-      }
-      funkyIndex = (funkyIndex + 1) % funkyNames.length;
-      funkyTitle.classList.add('changing');
-      setTimeout(() => {
-        funkyTitle.textContent = funkyNames[funkyIndex];
-        funkyTitle.classList.remove('changing');
-      }, 300);
-    }, 1800);
   }
 
-  const ctx = canvas.getContext('2d');
-  let isDrawing = false;
   let isRevealed = false;
-  let totalDistanceScratched = 0;
-  let lastX = 0, lastY = 0;
+  let faahPlayed = false;
 
-  function resizeCanvas() {
-    canvas.width = window.innerWidth;
-    canvas.height = window.innerHeight;
-    ctx.clearRect(0, 0, canvas.width, canvas.height);
+  // ── Play faah audio on the first interaction (tap/click on the overlay) ──
+  // Browsers block autoplay; we play on first user gesture.
+  function playFaahAudio() {
+    if (!faahAudio || faahPlayed) return;
+    faahPlayed = true;
+    faahAudio.volume = 0.9;
+    faahAudio.currentTime = 0;
+    faahAudio.play().catch(() => { });
   }
 
-  resizeCanvas();
-  window.addEventListener('resize', resizeCanvas);
-
-  function spawnEraserParticle(x, y) {
-    const emojis = ['🧼', '🧽', '✨', '🫧', '💨', '🌸'];
-    const p = document.createElement('div');
-    p.className = 'scratch-particle';
-    p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
-    p.style.left = x + 'px';
-    p.style.top = y + 'px';
-    const dx = (Math.random() - 0.5) * 80 + 'px';
-    const dy = (Math.random() - 0.5) * 80 + 'px';
-    p.style.setProperty('--dx', dx);
-    p.style.setProperty('--dy', dy);
-    document.body.appendChild(p);
-    setTimeout(() => p.remove(), 700);
+  function stopFaahAudio() {
+    if (!faahAudio) return;
+    faahAudio.pause();
+    faahAudio.currentTime = 0;
   }
 
-  function updateScratchProgress(amount) {
-    if (isRevealed) return;
-    totalDistanceScratched += amount;
-    // Calculate progress up to 100%
-    const targetDistance = Math.min(window.innerWidth * 1.4, 1500);
-    const pct = Math.min(100, Math.round((totalDistanceScratched / targetDistance) * 100));
-
-    if (pctText) pctText.textContent = pct + '%';
-
-    if (bgGif) {
-      const remaining = 1 - (pct / 100);
-      bgGif.style.opacity = Math.max(0.15, remaining);
-      bgGif.style.filter = `blur(${(pct / 100) * 12}px) brightness(${1 + (pct / 200)}) drop-shadow(0 15px 35px rgba(0,0,0,0.6))`;
-      const blurredBg = document.querySelector('.scratch-blurred-bg');
-      if (blurredBg) blurredBg.style.opacity = Math.max(0.1, 0.85 * remaining);
-    }
-
-    if (nameContainer) {
-      nameContainer.style.opacity = Math.max(0.2, 1 - (pct / 100));
-      nameContainer.style.transform = `scale(${1 - (pct / 600)})`;
-    }
-
-    if (bottomBar) {
-      bottomBar.style.transform = `scale(${1 - (pct / 700)})`;
-    }
-
-    if (pct >= 40 && !isRevealed) {
-      revealOriginalPage();
+  function spawnTapParticle(x, y) {
+    const emojis = ['✨', '🌸', '💫', '🎉', '💖', '⭐'];
+    for (let i = 0; i < 5; i++) {
+      const p = document.createElement('div');
+      p.className = 'scratch-particle';
+      p.textContent = emojis[Math.floor(Math.random() * emojis.length)];
+      p.style.left = x + 'px';
+      p.style.top = y + 'px';
+      const dx = (Math.random() - 0.5) * 120 + 'px';
+      const dy = (Math.random() - 0.5) * 120 + 'px';
+      p.style.setProperty('--dx', dx);
+      p.style.setProperty('--dy', dy);
+      document.body.appendChild(p);
+      setTimeout(() => p.remove(), 700);
     }
   }
 
-  function revealOriginalPage() {
+  function revealOriginalPage(x, y) {
     if (isRevealed) return;
     isRevealed = true;
 
-    if (funkyInterval) clearInterval(funkyInterval);
-    if (pctText) pctText.textContent = '100%';
+    // Stop the faah audio when revealing
+    stopFaahAudio();
+
+    if (x !== undefined && y !== undefined) {
+      spawnTapParticle(x, y);
+    }
 
     // Play reveal sound if available
     const swapSound = document.getElementById('swap-sound');
@@ -172,20 +135,20 @@ function initScratchCover() {
     // Confetti blast
     if (typeof confetti === 'function') {
       confetti({
-        particleCount: 80,
-        spread: 70,
+        particleCount: 100,
+        spread: 80,
         origin: { y: 0.6 },
         colors: ['#D4788A', '#F2C4C4', '#8AAD9A', '#C89D6A', '#FFF']
       });
       setTimeout(() => {
         confetti({
-          particleCount: 50,
+          particleCount: 60,
           angle: 60,
           spread: 55,
           origin: { x: 0 }
         });
         confetti({
-          particleCount: 50,
+          particleCount: 60,
           angle: 120,
           spread: 55,
           origin: { x: 1 }
@@ -196,170 +159,124 @@ function initScratchCover() {
     overlay.classList.add('revealed');
     document.body.classList.remove('scratch-active');
 
+    // Start background music now that main page is revealed
+    if (typeof startMainBackgroundMusic === 'function') {
+      startMainBackgroundMusic();
+    }
+
     setTimeout(() => {
       overlay.style.display = 'none';
       runHBReveal();
     }, 750);
   }
 
-  function startErase(x, y) {
-    isDrawing = true;
-    lastX = x;
-    lastY = y;
-    spawnEraserParticle(x, y);
-    updateScratchProgress(15);
-  }
-
-  function continueErase(x, y) {
-    if (!isDrawing || isRevealed) return;
-
-    ctx.save();
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.4)';
-    ctx.lineWidth = 45;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-    ctx.beginPath();
-    ctx.moveTo(lastX, lastY);
-    ctx.lineTo(x, y);
-    ctx.stroke();
-    ctx.restore();
-
-    const dist = Math.hypot(x - lastX, y - lastY);
-    if (dist > 6) {
-      spawnEraserParticle(x, y);
-      updateScratchProgress(dist);
-      lastX = x;
-      lastY = y;
-    }
-  }
-
-  function stopErase() {
-    isDrawing = false;
-  }
-
-  // Pointer & Touch Events
-  canvas.addEventListener('mousedown', (e) => {
-    startErase(e.clientX, e.clientY);
+  // Click & Touch anywhere on overlay to reveal!
+  // Also plays faah audio on first interaction.
+  overlay.addEventListener('click', (e) => {
+    playFaahAudio();
+    revealOriginalPage(e.clientX, e.clientY);
   });
-  window.addEventListener('mousemove', (e) => {
-    if (isDrawing) continueErase(e.clientX, e.clientY);
-  });
-  window.addEventListener('mouseup', stopErase);
 
-  canvas.addEventListener('touchstart', (e) => {
-    if (e.touches.length > 0) {
+  overlay.addEventListener('touchstart', (e) => {
+    playFaahAudio();
+    if (e.touches && e.touches.length > 0) {
       const t = e.touches[0];
-      startErase(t.clientX, t.clientY);
+      revealOriginalPage(t.clientX, t.clientY);
+    } else {
+      revealOriginalPage();
     }
   }, { passive: true });
 
-  canvas.addEventListener('touchmove', (e) => {
-    if (e.touches.length > 0 && isDrawing) {
-      const t = e.touches[0];
-      continueErase(t.clientX, t.clientY);
-      e.preventDefault();
-    }
-  }, { passive: false });
-
-  canvas.addEventListener('touchend', stopErase);
-  canvas.addEventListener('touchcancel', stopErase);
-
-  if (quickBtn) {
-    quickBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
+  overlay.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
+      playFaahAudio();
       revealOriginalPage();
-    });
-  }
+    }
+  });
 }
 
-// Initialize scratch cover
+// Initialize troll overlay
 if (document.readyState === 'loading') {
-  document.addEventListener('DOMContentLoaded', initScratchCover);
+  document.addEventListener('DOMContentLoaded', initTrollOverlay);
 } else {
-  initScratchCover();
+  initTrollOverlay();
 }
 
-    // ══════════════════════════════════════════
-    // DATA — edit memories here
-    // ══════════════════════════════════════════
-    const memories = [
-      {
-        date: "Chapter 1",
-        title: "Where It All Began",
-        description: "Throwing it back to the golden days. We had no idea we'd end up this chaotic together.",
-        image_url: "assests/old1.jpeg",
-        emoji: "🌸"
-      },
-      {
-        date: "Unfiltered Throwback",
-        title: "Classic Moments",
-        description: "Back when life was simpler, conversations were endless, and we took the most candid memories.",
-        image_url: "assests/old2.jpeg",
-        emoji: "📸"
-      },
-      {
-        date: "Live Drama",
-        title: "Pure Unfiltered Chaos",
-        description: "Exhibit A: Why we can never be left alone in public without causing a funny scene.",
-        video_url: "assests/vid_1.mp4",
-        emoji: "🎬"
-      },
-      {
-        date: "Trip Diaries",
-        title: "Dehradun Escape",
-        description: "Chilly breeze, scenic mountain roads, getting lost, and making memories that stay forever.",
-        image_url: "assests/dehradun.jpeg",
-        emoji: "🏔️"
-      },
-      {
-        date: "Foodie Files",
-        title: "Soya Chaap & Food Cravings",
-        description: "Our mutual love for delicious food and never-ending street food dates. Zero regrets.",
-        image_url: "assests/soyachap.jpeg",
-        emoji: "🍢"
-      },
-      {
-        date: "Vibe Check",
-        title: "Crazy Laughs & Good Times",
-        description: "Those random moments where we laughed so hard our stomachs hurt.",
-        video_url: "assests/vid_2.mp4",
-        emoji: "✨"
-      },
-      {
-        date: "Partners in Crime",
-        title: "The Dynamic Duo",
-        description: "Through every high, low, and silly phase — always got your back (and ready to roast you).",
-        image_url: "assests/DUO.jpeg",
-        emoji: "👯"
-      },
-      {
-        date: "Comedy Central",
-        title: "Never a Dull Moment",
-        description: "Certified comedy. If our phone galleries ever leak, our reputations are over.",
-        video_url: "assests/vid_3.mp4",
-        emoji: "🍿"
-      },
-      {
-        date: "Squad Goals",
-        title: "The Trio & Future Adventures",
-        description: "To a million more memories, endless jokes, and you living your happiest life. Happy Birthday!",
-        image_url: "assests/thetrio.jpeg",
-        emoji: "🎀"
-      }
-    ];
+// ══════════════════════════════════════════
+// DATA — edit memories here
+// ══════════════════════════════════════════
+const memories = [
+  {
+    date: "Chapter 1 · 2 Photos",
+    title: "Where It All Began",
+    description: "Throwing it back to the golden days. We had no idea we'd end up this chaotic together.",
+    images: ["assests/old1.jpeg", "assests/old2.jpeg"],
+    image_url: "assests/old1.jpeg",   // thumbnail shown on card
+    emoji: "🌸"
+  },
+  {
+    date: "Live Drama",
+    title: "Pure Unfiltered Chaos",
+    description: "Exhibit A: Why we can never be left alone in public without causing a funny scene.",
+    video_url: "assests/vid_1.mp4",
+    emoji: "🎬"
+  },
+  {
+    date: "Trip Diaries",
+    title: "Dehradun Escape",
+    description: "Chilly breeze, scenic mountain roads, getting lost, and making memories that stay forever.",
+    image_url: "assests/dehradun.jpeg",
+    emoji: "🏔️"
+  },
+  {
+    date: "Foodie Files",
+    title: "Soya Chaap & Food Cravings",
+    description: "Our mutual love for delicious food and never-ending street food dates. Zero regrets.",
+    image_url: "assests/soyachap.jpeg",
+    emoji: "🍢"
+  },
+  {
+    date: "Vibe Check",
+    title: "Crazy Laughs & Good Times",
+    description: "Those random moments where we laughed so hard our stomachs hurt.",
+    video_url: "assests/vid_2.mp4",
+    emoji: "✨"
+  },
+  {
+    date: "Partners in Crime",
+    title: "The Dynamic Duo",
+    description: "Through every high, low, and silly phase — always got your back (and ready to roast you).",
+    image_url: "assests/DUO.jpeg",
+    emoji: "👯"
+  },
+  {
+    date: "Comedy Central",
+    title: "Never a Dull Moment",
+    description: "Certified comedy. If our phone galleries ever leak, our reputations are over.",
+    video_url: "assests/vid_3.mp4",
+    emoji: "🍿"
+  },
+  {
+    date: "Squad Goals",
+    title: "The Trio & Future Adventures",
+    description: "To a million more memories, endless jokes, and you living your happiest life. Happy Birthday!",
+    image_url: "assests/thetrio.jpeg",
+    emoji: "🎀"
+  }
+];
 
-    // Image for the puzzle board
-    const IMG_SRC = "assests/bgimage.jpeg"
+// Image for the puzzle board
+const IMG_SRC = "assests/bgimage.jpeg"
 
-    // ── RENDER MEMORIES ──
-    const container = document.getElementById('memories-container');
+// ── RENDER MEMORIES ──
+const container = document.getElementById('memories-container');
 
-    memories.forEach((m, i) => {
-      const isEven = i % 2 === 0;
+memories.forEach((m, i) => {
+  const isEven = i % 2 === 0;
 
-      let mediaHtml = '';
-      if (m.video_url) {
-        mediaHtml = `
+  let mediaHtml = '';
+  if (m.video_url) {
+    mediaHtml = `
           <div class="relative w-full h-56 md:h-64 overflow-hidden rounded-[2px] bg-black video-container">
             <video src="${m.video_url}" 
                    class="w-full h-full object-cover block memory-video"
@@ -389,15 +306,22 @@ if (document.readyState === 'loading') {
             </button>
           </div>
         `;
-      } else {
-        mediaHtml = `
-          <img src="${m.image_url}" alt="${m.title}"
-               class="w-full h-56 md:h-64 object-cover block rounded-[2px]"
-               loading="lazy" />
+  } else {
+    const photoCount = m.images ? m.images.length : 1;
+    const countBadge = photoCount > 1
+      ? `<span class="absolute top-2 right-2 z-10 bg-black/60 text-white text-xs font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">📷 ${photoCount}</span>`
+      : '';
+    mediaHtml = `
+          <div class="relative w-full h-56 md:h-64 overflow-hidden rounded-[2px]">
+            <img src="${m.image_url}" alt="${m.title}"
+                 class="w-full h-full object-cover block"
+                 loading="lazy" />
+            ${countBadge}
+          </div>
         `;
-      }
+  }
 
-      container.innerHTML += `
+  container.innerHTML += `
         <div class="relative mb-24 flex flex-col md:flex-row ${isEven ? '' : 'md:flex-row-reverse'} items-center gap-8 fade-up">
 
           <div class="timeline-dot hidden md:block" style="top:40px;"></div>
@@ -418,1229 +342,1322 @@ if (document.readyState === 'loading') {
 
         </div>
       `;
-    });
+});
 
-    // ── MEDIA LIGHTBOX (POPUP FOR IMAGES & VIDEOS) ──
-    let currentLightboxIndex = 0;
+// ── MEDIA LIGHTBOX (POPUP FOR IMAGES & VIDEOS) ──
+let currentLightboxIndex = 0;
+let currentSubImageIndex = 0;  // for multi-image galleries
 
-    function renderLightboxContent(index) {
-      const m = memories[index];
-      if (!m) return;
-      currentLightboxIndex = index;
+function renderLightboxContent(memoryIdx, subIdx = 0) {
+  const m = memories[memoryIdx];
+  if (!m) return;
+  currentLightboxIndex = memoryIdx;
 
-      const wrap = document.getElementById('lightbox-media-wrap');
-      const dateEl = document.getElementById('lightbox-date');
-      const titleEl = document.getElementById('lightbox-title');
-      const descEl = document.getElementById('lightbox-desc');
+  const wrap = document.getElementById('lightbox-media-wrap');
+  const dateEl = document.getElementById('lightbox-date');
+  const titleEl = document.getElementById('lightbox-title');
+  const descEl = document.getElementById('lightbox-desc');
 
-      if (dateEl) dateEl.textContent = m.date;
-      if (titleEl) titleEl.textContent = `${m.emoji || '✨'} ${m.title}`;
-      if (descEl) descEl.textContent = m.description;
+  if (dateEl) dateEl.textContent = m.date;
+  if (titleEl) titleEl.textContent = `${m.emoji || '✨'} ${m.title}`;
+  if (descEl) descEl.textContent = m.description;
 
-      if (!wrap) return;
+  if (!wrap) return;
 
-      if (m.video_url) {
-        wrap.innerHTML = `
-          <video src="${m.video_url}" 
-                 controls autoplay playsinline
-                 ${m.image_url ? `poster="${m.image_url}"` : ''}
-                 class="w-full max-h-[55vh] object-contain block rounded-[12px]"></video>
-        `;
-        pauseBackgroundMusic();
-      } else {
-        wrap.innerHTML = `
-          <img src="${m.image_url}" alt="${m.title}" 
-               class="w-full max-h-[55vh] object-contain block rounded-[12px]" />
-        `;
-      }
+  // ── Multi-image gallery ──
+  if (m.images && m.images.length > 1) {
+    const imgs = m.images;
+    currentSubImageIndex = Math.max(0, Math.min(subIdx, imgs.length - 1));
+
+    const dots = imgs.map((_, di) =>
+      `<span class="inline-block w-2 h-2 rounded-full transition-all duration-200 ${
+        di === currentSubImageIndex ? 'bg-[var(--rose)] scale-125' : 'bg-gray-300'
+      }" style="margin:0 3px;"></span>`
+    ).join('');
+
+    wrap.innerHTML = `
+      <div class="relative w-full" id="gallery-wrap">
+        <img id="gallery-img" src="${imgs[currentSubImageIndex]}" alt="${m.title}"
+             class="w-full max-h-[55vh] object-contain block rounded-[12px]"
+             style="transition:opacity 0.25s ease;" />
+
+        ${imgs.length > 1 ? `
+          <button id="gallery-prev" class="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center text-gray-700 text-lg hover:bg-rose-100 transition-colors z-10" aria-label="Previous photo">‹</button>
+          <button id="gallery-next" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center text-gray-700 text-lg hover:bg-rose-100 transition-colors z-10" aria-label="Next photo">›</button>
+        ` : ''}
+
+        <div class="text-center mt-3">${dots}
+          <span class="text-xs text-gray-400 ml-2">${currentSubImageIndex + 1} / ${imgs.length}</span>
+        </div>
+      </div>
+    `;
+
+    // Sub-navigation within gallery
+    const gPrev = wrap.querySelector('#gallery-prev');
+    const gNext = wrap.querySelector('#gallery-next');
+    const gImg = wrap.querySelector('#gallery-img');
+
+    function goToSubImage(newSub) {
+      if (!gImg) return;
+      gImg.style.opacity = '0';
+      setTimeout(() => {
+        renderLightboxContent(memoryIdx, newSub);
+      }, 200);
     }
 
-    function openMediaLightbox(index) {
-      const modal = document.getElementById('media-lightbox');
-      if (!modal) return;
-      renderLightboxContent(index);
-      modal.classList.add('active');
-      modal.setAttribute('aria-hidden', 'false');
-    }
-
-    function closeMediaLightbox() {
-      const modal = document.getElementById('media-lightbox');
-      if (!modal) return;
-      modal.classList.remove('active');
-      modal.setAttribute('aria-hidden', 'true');
-
-      const wrap = document.getElementById('lightbox-media-wrap');
-      if (wrap) {
-        const vid = wrap.querySelector('video');
-        if (vid) vid.pause();
-        setTimeout(() => { wrap.innerHTML = ''; }, 300);
-      }
-      resumeBackgroundMusic();
-    }
-
-    function initMediaLightbox() {
-      const modal = document.getElementById('media-lightbox');
-      const closeBtn = document.getElementById('lightbox-close');
-      const backdrop = document.getElementById('lightbox-backdrop');
-      const prevBtn = document.getElementById('lightbox-prev');
-      const nextBtn = document.getElementById('lightbox-next');
-
-      if (closeBtn) closeBtn.addEventListener('click', closeMediaLightbox);
-      if (backdrop) backdrop.addEventListener('click', closeMediaLightbox);
-
-      if (prevBtn) {
-        prevBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const newIdx = (currentLightboxIndex - 1 + memories.length) % memories.length;
-          renderLightboxContent(newIdx);
-        });
-      }
-
-      if (nextBtn) {
-        nextBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          const newIdx = (currentLightboxIndex + 1) % memories.length;
-          renderLightboxContent(newIdx);
-        });
-      }
-
-      document.addEventListener('keydown', (e) => {
-        if (!modal || !modal.classList.contains('active')) return;
-        if (e.key === 'Escape') closeMediaLightbox();
-        if (e.key === 'ArrowLeft' && prevBtn) prevBtn.click();
-        if (e.key === 'ArrowRight' && nextBtn) nextBtn.click();
-      });
-
-      // Attach click to all polaroid cards
-      document.querySelectorAll('.polaroid').forEach(card => {
-        card.addEventListener('click', (e) => {
-          if (e.target.closest('.volume-btn')) return;
-          const idx = parseInt(card.getAttribute('data-index'), 10);
-          if (!isNaN(idx)) openMediaLightbox(idx);
-        });
-      });
-    }
-
-    initMediaLightbox();
-
-    // ── VIDEO PLAYERS INITIALIZATION ──
-    let bgMusicPausedByVideo = false;
-
-    function pauseBackgroundMusic() {
-      const bgMusic = document.getElementById('bg-music');
-      if (bgMusic && !bgMusic.paused) {
-        bgMusic.pause();
-        pauseEq();
-        bgMusicPausedByVideo = true;
-      }
-    }
-
-    function resumeBackgroundMusic() {
-      const bgMusic = document.getElementById('bg-music');
-      if (bgMusic && bgMusicPausedByVideo) {
-        bgMusic.play().catch(() => { });
-        playEq();
-        bgMusicPausedByVideo = false;
-      }
-    }
-
-    function initVideoPlayers() {
-      const videoContainers = document.querySelectorAll('.video-container');
-
-      videoContainers.forEach(container => {
-        const video = container.querySelector('video');
-        const polaroid = container.closest('.polaroid');
-        const volumeBtn = container.querySelector('.volume-btn');
-        const muteIcon = volumeBtn ? volumeBtn.querySelector('.mute-icon') : null;
-        const unmuteIcon = volumeBtn ? volumeBtn.querySelector('.unmute-icon') : null;
-
-        if (!video || !polaroid) return;
-
-        polaroid.addEventListener('mouseenter', () => {
-          video.play().then(() => {
-            container.classList.add('playing');
-            if (!video.muted) {
-              pauseBackgroundMusic();
-            }
-          }).catch(err => console.log("Video play failed:", err));
-        });
-
-        polaroid.addEventListener('mouseleave', () => {
-          video.pause();
-          container.classList.remove('playing');
-          resumeBackgroundMusic();
-        });
-
-        if (volumeBtn) {
-          volumeBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            e.preventDefault();
-
-            if (video.muted) {
-              video.muted = false;
-              if (muteIcon) muteIcon.classList.add('hidden');
-              if (unmuteIcon) unmuteIcon.classList.remove('hidden');
-              pauseBackgroundMusic();
-            } else {
-              video.muted = true;
-              if (muteIcon) muteIcon.classList.remove('hidden');
-              if (unmuteIcon) unmuteIcon.classList.add('hidden');
-              resumeBackgroundMusic();
-            }
-          });
-        }
-      });
-    }
-
-    initVideoPlayers();
-
-    // ── INTERSECTION OBSERVER ──
-    const io = new IntersectionObserver((entries) => {
-      entries.forEach(e => {
-        if (e.isIntersecting) {
-          e.target.classList.add('visible');
-          io.unobserve(e.target);
-        }
-      });
-    }, { threshold: 0.12 });
-
-    document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
-
-    // ── CUSTOM CURSOR ──
-    const cursor = document.getElementById('cursor');
-    const cursorRing = document.getElementById('cursor-ring');
-    let mx = 0, my = 0;
-
-    document.addEventListener('mousemove', e => {
-      mx = e.clientX; my = e.clientY;
-      cursor.style.left = mx + 'px';
-      cursor.style.top = my + 'px';
-    });
-
-    (function animateRing() {
-      cursorRing.style.left = mx + 'px';
-      cursorRing.style.top = my + 'px';
-      requestAnimationFrame(animateRing);
-    })();
-
-    function updateCursorHoverEvents() {
-      document.querySelectorAll('button, a, input[type=range], .tile').forEach(el => {
-        el.addEventListener('mouseenter', () => {
-          cursor.style.width = '20px'; cursor.style.height = '20px';
-          cursorRing.style.transform = 'translate(-50%,-50%) scale(1.5)';
-        });
-        el.addEventListener('mouseleave', () => {
-          cursor.style.width = '12px'; cursor.style.height = '12px';
-          cursorRing.style.transform = 'translate(-50%,-50%) scale(1)';
-        });
-      });
-    }
-
-    // ── SCROLL PROGRESS ──
-    const progress = document.getElementById('scroll-progress');
-    const vignette = document.getElementById('cinematic-vignette');
-    const timelineSec = document.getElementById('timeline');
-
-    window.addEventListener('scroll', () => {
-      const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
-      progress.style.transform = `scaleX(${Math.min(pct, 1)})`;
-
-      // Cinematic vignette: activate when timeline section is in view
-      if (timelineSec) {
-        const rect = timelineSec.getBoundingClientRect();
-        const vh = window.innerHeight;
-        // Section is considered "in view" when at least partially visible
-        const inView = rect.top < vh * 0.7 && rect.bottom > vh * 0.3;
-        if (inView) {
-          vignette.classList.add('active');
-        } else {
-          vignette.classList.remove('active');
-        }
-      }
-    });
-
-    // ── TIMELINE SPARKLING LIGHT ──
-    (function initTimelineSparkle() {
-      const canvas = document.getElementById('timeline-sparkle-canvas');
-      if (!canvas) return;
-      const ctx = canvas.getContext('2d');
-      const container = document.getElementById('memories-container');
-      const timelineSection = document.getElementById('timeline');
-
-      let trailParticles = [];
-      let burstParticles = [];
-      let scrollProgress = 0;
-      let prevScrollProgress = 0;
-      let smoothOrbY = 0;
-      let scrollVelocity = 0;
-      let frameTime = 0;
-      let animFrameId;
-
-      const sparkleColors = [
-        { r: 255, g: 220, b: 230 },  // soft pink
-        { r: 212, g: 120, b: 138 },  // rose
-        { r: 240, g: 200, b: 130 },  // warm gold
-        { r: 255, g: 255, b: 255 },  // white
-        { r: 255, g: 240, b: 200 },  // warm light
-        { r: 176, g: 104, b: 122 },  // mauve
-        { r: 255, g: 180, b: 200 },  // hot pink glow
-        { r: 200, g: 170, b: 255 },  // lavender
-      ];
-
-      function resizeCanvas() {
-        canvas.width = container.offsetWidth;
-        canvas.height = container.offsetHeight;
-      }
-
-      function getTimelineX() {
-        return canvas.width / 2;
-      }
-
-      function updateScrollProgress() {
-        const rect = timelineSection.getBoundingClientRect();
-        const sectionTop = rect.top + window.scrollY;
-        const sectionHeight = rect.height;
-        const viewportHeight = window.innerHeight;
-        const scrollStart = sectionTop - viewportHeight;
-        const scrollEnd = sectionTop + sectionHeight;
-        const scrollRange = scrollEnd - scrollStart;
-        if (scrollRange <= 0) { scrollProgress = 0; return; }
-        scrollProgress = Math.max(0, Math.min(1, (window.scrollY - scrollStart) / scrollRange));
-      }
-
-      // ── Main Glowing Orb with corona & lens flare ──
-      class GlowOrb {
-        constructor() {
-          this.x = 0;
-          this.y = 0;
-          this.radius = 8;
-          this.pulsePhase = 0;
-          this.flarePhase = 0;
-        }
-
-        update(x, y, velocity) {
-          this.x = x;
-          this.y = y;
-          this.pulsePhase += 0.07;
-          this.flarePhase += 0.03;
-          this.intensity = Math.min(1, 0.6 + velocity * 8);
-        }
-
-        draw(ctx) {
-          const pulse = 1 + Math.sin(this.pulsePhase) * 0.35;
-          const r = this.radius * pulse;
-          const int = this.intensity;
-
-          // Wide ambient glow (big halo)
-          const g4 = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 14);
-          g4.addColorStop(0, `rgba(212, 120, 138, ${0.08 * int})`);
-          g4.addColorStop(0.3, `rgba(255, 180, 200, ${0.04 * int})`);
-          g4.addColorStop(1, 'transparent');
-          ctx.fillStyle = g4;
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, r * 14, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Corona rays
-          ctx.save();
-          ctx.translate(this.x, this.y);
-          const rayCount = 6;
-          for (let i = 0; i < rayCount; i++) {
-            const angle = (i / rayCount) * Math.PI * 2 + this.flarePhase;
-            const rayLen = r * (5 + Math.sin(this.pulsePhase + i * 1.3) * 2.5);
-            const rayWidth = r * 0.4;
-            ctx.save();
-            ctx.rotate(angle);
-            const rayGrad = ctx.createLinearGradient(0, 0, rayLen, 0);
-            rayGrad.addColorStop(0, `rgba(255, 255, 255, ${0.25 * int})`);
-            rayGrad.addColorStop(0.3, `rgba(255, 200, 220, ${0.12 * int})`);
-            rayGrad.addColorStop(1, 'transparent');
-            ctx.fillStyle = rayGrad;
-            ctx.beginPath();
-            ctx.moveTo(0, -rayWidth * 0.15);
-            ctx.lineTo(rayLen, 0);
-            ctx.lineTo(0, rayWidth * 0.15);
-            ctx.closePath();
-            ctx.fill();
-            ctx.restore();
-          }
-          ctx.restore();
-
-          // Mid glow
-          const g2 = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 4);
-          g2.addColorStop(0, `rgba(255, 255, 255, ${0.7 * int})`);
-          g2.addColorStop(0.2, `rgba(255, 220, 230, ${0.4 * int})`);
-          g2.addColorStop(0.5, `rgba(212, 120, 138, ${0.2 * int})`);
-          g2.addColorStop(1, 'transparent');
-          ctx.fillStyle = g2;
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, r * 4, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Bright core
-          const g1 = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 1.2);
-          g1.addColorStop(0, `rgba(255, 255, 255, ${0.98 * int})`);
-          g1.addColorStop(0.4, `rgba(255, 240, 245, ${0.8 * int})`);
-          g1.addColorStop(0.7, `rgba(242, 196, 196, ${0.3 * int})`);
-          g1.addColorStop(1, 'transparent');
-          ctx.fillStyle = g1;
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, r * 1.2, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      // ── Sparkle particle that trails behind ──
-      class SparkleParticle {
-        constructor(x, y, velocity) {
-          const color = sparkleColors[Math.floor(Math.random() * sparkleColors.length)];
-          const spread = 30 + velocity * 150;
-          this.x = x + (Math.random() - 0.5) * spread;
-          this.y = y + (Math.random() - 0.5) * 15;
-          this.r = color.r;
-          this.g = color.g;
-          this.b = color.b;
-          this.radius = Math.random() * 3 + 0.8;
-          this.life = 1;
-          this.decay = 0.005 + Math.random() * 0.012;
-          this.vx = (Math.random() - 0.5) * (1.5 + velocity * 4);
-          this.vy = (Math.random() - 0.5) * 0.8 - 0.2;
-          this.gravity = 0.008 + Math.random() * 0.01;
-          this.twinkleSpeed = 0.06 + Math.random() * 0.12;
-          this.twinklePhase = Math.random() * Math.PI * 2;
-          this.type = Math.random();  // determines visual style
-        }
-
-        update() {
-          this.x += this.vx;
-          this.y += this.vy;
-          this.vy += this.gravity;
-          this.vx *= 0.97;
-          this.life -= this.decay;
-          this.twinklePhase += this.twinkleSpeed;
-        }
-
-        draw(ctx) {
-          if (this.life <= 0) return;
-          const twinkle = 0.3 + Math.sin(this.twinklePhase) * 0.7;
-          const alpha = this.life * twinkle;
-
-          if (this.type < 0.25) {
-            this.drawStar(ctx, alpha);
-          } else if (this.type < 0.5) {
-            this.drawDiamond(ctx, alpha);
-          } else {
-            this.drawDot(ctx, alpha);
-          }
-        }
-
-        drawDot(ctx, alpha) {
-          const glowR = this.radius * 5;
-          const grd = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowR);
-          grd.addColorStop(0, `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha * 0.35})`);
-          grd.addColorStop(0.5, `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha * 0.08})`);
-          grd.addColorStop(1, 'transparent');
-          ctx.fillStyle = grd;
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, glowR, 0, Math.PI * 2);
-          ctx.fill();
-
-          ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha})`;
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, this.radius * this.life, 0, Math.PI * 2);
-          ctx.fill();
-        }
-
-        drawStar(ctx, alpha) {
-          const size = this.radius * 3 * this.life;
-          ctx.save();
-          ctx.translate(this.x, this.y);
-          ctx.rotate(this.twinklePhase * 0.5);
-
-          // Cross sparkle
-          ctx.strokeStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha * 0.9})`;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(-size, 0); ctx.lineTo(size, 0);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(0, -size); ctx.lineTo(0, size);
-          ctx.stroke();
-
-          // Diagonal lines (8-point star)
-          const ds = size * 0.65;
-          ctx.lineWidth = 0.6;
-          ctx.beginPath();
-          ctx.moveTo(-ds, -ds); ctx.lineTo(ds, ds);
-          ctx.stroke();
-          ctx.beginPath();
-          ctx.moveTo(ds, -ds); ctx.lineTo(-ds, ds);
-          ctx.stroke();
-
-          // Center bright dot
-          ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
-          ctx.beginPath();
-          ctx.arc(0, 0, this.radius * 0.7 * this.life, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
-
-        drawDiamond(ctx, alpha) {
-          const size = this.radius * 2.2 * this.life;
-          ctx.save();
-          ctx.translate(this.x, this.y);
-          ctx.rotate(this.twinklePhase * 0.3);
-
-          ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha * 0.7})`;
-          ctx.beginPath();
-          ctx.moveTo(0, -size);
-          ctx.lineTo(size * 0.5, 0);
-          ctx.lineTo(0, size);
-          ctx.lineTo(-size * 0.5, 0);
-          ctx.closePath();
-          ctx.fill();
-
-          // Inner glow
-          const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.8);
-          grd.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.5})`);
-          grd.addColorStop(1, 'transparent');
-          ctx.fillStyle = grd;
-          ctx.beginPath();
-          ctx.arc(0, 0, size * 0.8, 0, Math.PI * 2);
-          ctx.fill();
-          ctx.restore();
-        }
-      }
-
-      // ── Burst particle (explodes on fast scroll) ──
-      class BurstParticle {
-        constructor(x, y) {
-          const color = sparkleColors[Math.floor(Math.random() * sparkleColors.length)];
-          const angle = Math.random() * Math.PI * 2;
-          const speed = 1 + Math.random() * 4;
-          this.x = x;
-          this.y = y;
-          this.r = color.r;
-          this.g = color.g;
-          this.b = color.b;
-          this.radius = Math.random() * 2 + 1;
-          this.life = 1;
-          this.decay = 0.015 + Math.random() * 0.025;
-          this.vx = Math.cos(angle) * speed;
-          this.vy = Math.sin(angle) * speed;
-          this.trail = [];
-        }
-
-        update() {
-          this.trail.push({ x: this.x, y: this.y, life: this.life });
-          if (this.trail.length > 6) this.trail.shift();
-          this.x += this.vx;
-          this.y += this.vy;
-          this.vx *= 0.95;
-          this.vy *= 0.95;
-          this.life -= this.decay;
-        }
-
-        draw(ctx) {
-          if (this.life <= 0) return;
-          // Trail
-          this.trail.forEach((t, i) => {
-            const a = t.life * (i / this.trail.length) * 0.3;
-            ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${a})`;
-            ctx.beginPath();
-            ctx.arc(t.x, t.y, this.radius * 0.5 * (i / this.trail.length), 0, Math.PI * 2);
-            ctx.fill();
-          });
-          // Head
-          ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${this.life})`;
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, this.radius * this.life, 0, Math.PI * 2);
-          ctx.fill();
-        }
-      }
-
-      // ── Ambient sparkle placed along sinusoidal path ──
-      class AmbientSparkle {
-        constructor(x, y, idx) {
-          const color = sparkleColors[Math.floor(Math.random() * sparkleColors.length)];
-          this.baseX = x + Math.sin(idx * 0.6) * 18;
-          this.x = this.baseX;
-          this.y = y;
-          this.r = color.r;
-          this.g = color.g;
-          this.b = color.b;
-          this.radius = Math.random() * 2 + 0.4;
-          this.twinkleSpeed = 0.025 + Math.random() * 0.06;
-          this.twinklePhase = Math.random() * Math.PI * 2;
-          this.baseAlpha = 0.1 + Math.random() * 0.25;
-          this.driftPhase = Math.random() * Math.PI * 2;
-          this.driftSpeed = 0.008 + Math.random() * 0.015;
-          this.driftAmp = 3 + Math.random() * 8;
-        }
-
-        update() {
-          this.twinklePhase += this.twinkleSpeed;
-          this.driftPhase += this.driftSpeed;
-          this.x = this.baseX + Math.sin(this.driftPhase) * this.driftAmp;
-        }
-
-        draw(ctx, orbY, scrollVel) {
-          const distToOrb = Math.abs(this.y - orbY);
-          const proximity = Math.max(0, 1 - distToOrb / 250);
-          const twinkle = 0.2 + Math.sin(this.twinklePhase) * 0.8;
-          // Sparkles light up much more as the orb passes near them
-          const excite = proximity * (1 + scrollVel * 6);
-          const alpha = (this.baseAlpha + excite * 0.7) * twinkle;
-
-          if (alpha < 0.01) return;
-
-          // Glow halo
-          const glowRadius = this.radius * (5 + proximity * 6);
-          const grd = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowRadius);
-          grd.addColorStop(0, `rgba(${this.r}, ${this.g}, ${this.b}, ${Math.min(alpha * 0.35, 0.5)})`);
-          grd.addColorStop(0.5, `rgba(${this.r}, ${this.g}, ${this.b}, ${Math.min(alpha * 0.08, 0.15)})`);
-          grd.addColorStop(1, 'transparent');
-          ctx.fillStyle = grd;
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, glowRadius, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Core
-          const coreR = this.radius * (1 + proximity * 1.5);
-          ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${Math.min(alpha, 1)})`;
-          ctx.beginPath();
-          ctx.arc(this.x, this.y, coreR, 0, Math.PI * 2);
-          ctx.fill();
-
-          // Bright flash when orb is very close
-          if (proximity > 0.7) {
-            ctx.fillStyle = `rgba(255, 255, 255, ${(proximity - 0.7) * 2 * twinkle})`;
-            ctx.beginPath();
-            ctx.arc(this.x, this.y, this.radius * 0.6, 0, Math.PI * 2);
-            ctx.fill();
-          }
-        }
-      }
-
-      const orb = new GlowOrb();
-      let ambientSparkles = [];
-
-      function createAmbientSparkles() {
-        ambientSparkles = [];
-        const x = getTimelineX();
-        const h = canvas.height;
-        const count = Math.floor(h / 10); // denser
-        for (let i = 0; i < count; i++) {
-          const y = (i / count) * h;
-          ambientSparkles.push(new AmbientSparkle(x, y, i));
-        }
-      }
-
-      // Draw a glowing energy river instead of a boring straight line
-      function drawEnergyTrail(ctx, orbY, velocity) {
-        const x = getTimelineX();
-        const h = canvas.height;
-        const activeY = scrollProgress * h;
-        const velFactor = Math.min(1, velocity * 12);
-
-        // ── Lit-up section: glowing river from top to orb position ──
-        if (activeY > 2) {
-          // Wide soft glow behind the trail
-          const wideGlow = ctx.createLinearGradient(x, 0, x, activeY);
-          wideGlow.addColorStop(0, 'transparent');
-          wideGlow.addColorStop(0.3, `rgba(212, 120, 138, ${0.03 + velFactor * 0.04})`);
-          wideGlow.addColorStop(0.8, `rgba(255, 200, 220, ${0.06 + velFactor * 0.06})`);
-          wideGlow.addColorStop(1, `rgba(255, 255, 255, ${0.05 + velFactor * 0.05})`);
-          ctx.fillStyle = wideGlow;
-          ctx.beginPath();
-          // Wavy path for the wide glow
-          const waveWidth = 20 + velFactor * 15;
-          ctx.moveTo(x - waveWidth, 0);
-          for (let y = 0; y <= activeY; y += 5) {
-            const wave = Math.sin(y * 0.015 + frameTime * 0.002) * (6 + velFactor * 4);
-            ctx.lineTo(x - waveWidth + wave, y);
-          }
-          for (let y = activeY; y >= 0; y -= 5) {
-            const wave = Math.sin(y * 0.015 + frameTime * 0.002) * (6 + velFactor * 4);
-            ctx.lineTo(x + waveWidth + wave, y);
-          }
-          ctx.closePath();
-          ctx.fill();
-
-          // Inner bright core stream
-          ctx.save();
-          ctx.lineWidth = 1.5 + velFactor * 1.5;
-          ctx.lineCap = 'round';
-          const coreGrad = ctx.createLinearGradient(x, 0, x, activeY);
-          coreGrad.addColorStop(0, 'transparent');
-          coreGrad.addColorStop(0.2, `rgba(242, 196, 196, ${0.2 + velFactor * 0.15})`);
-          coreGrad.addColorStop(0.7, `rgba(212, 120, 138, ${0.35 + velFactor * 0.2})`);
-          coreGrad.addColorStop(1, `rgba(255, 255, 255, ${0.5 + velFactor * 0.3})`);
-          ctx.strokeStyle = coreGrad;
-          ctx.beginPath();
-          ctx.moveTo(x, 0);
-          for (let y = 0; y <= activeY; y += 3) {
-            const wave = Math.sin(y * 0.02 + frameTime * 0.003) * (3 + velFactor * 3);
-            ctx.lineTo(x + wave, y);
-          }
-          ctx.stroke();
-          ctx.restore();
-        }
-
-        // ── Unlit section below orb: very faint dotted path ──
-        const remainStart = Math.min(activeY + 20, h);
-        if (remainStart < h) {
-          ctx.save();
-          ctx.setLineDash([2, 12]);
-          ctx.strokeStyle = `rgba(212, 120, 138, 0.06)`;
-          ctx.lineWidth = 1;
-          ctx.beginPath();
-          ctx.moveTo(x, remainStart);
-          ctx.lineTo(x, h);
-          ctx.stroke();
-          ctx.setLineDash([]);
-          ctx.restore();
-        }
-      }
-
-      function animate(timestamp) {
-        animFrameId = requestAnimationFrame(animate);
-        if (canvas.width === 0 || canvas.height === 0) return;
-        frameTime = timestamp || 0;
-
-        ctx.clearRect(0, 0, canvas.width, canvas.height);
-        updateScrollProgress();
-
-        const x = getTimelineX();
-        const targetOrbY = scrollProgress * canvas.height;
-        // Smooth interpolation for the orb position
-        smoothOrbY += (targetOrbY - smoothOrbY) * 0.12;
-
-        const scrollDelta = Math.abs(scrollProgress - prevScrollProgress);
-        scrollVelocity += (scrollDelta - scrollVelocity) * 0.15;
-
-        // Draw the energy river trail
-        drawEnergyTrail(ctx, smoothOrbY, scrollVelocity);
-
-        // Update and draw ambient sparkles (they light up as orb passes)
-        ambientSparkles.forEach(s => {
-          s.update();
-          s.draw(ctx, smoothOrbY, scrollVelocity);
-        });
-
-        // Spawn trailing sparkle particles when scrolling
-        if (scrollDelta > 0.0003) {
-          const spawnCount = Math.min(8, Math.floor(scrollDelta * 1200) + 1);
-          for (let i = 0; i < spawnCount; i++) {
-            trailParticles.push(new SparkleParticle(x, smoothOrbY, scrollVelocity));
-          }
-        }
-
-        // Burst particles on fast scroll
-        if (scrollDelta > 0.004) {
-          const burstCount = Math.min(12, Math.floor(scrollDelta * 2000));
-          for (let i = 0; i < burstCount; i++) {
-            burstParticles.push(new BurstParticle(x, smoothOrbY));
-          }
-        }
-
-        // Ambient trickle even when idle
-        if (Math.random() < 0.08) {
-          trailParticles.push(new SparkleParticle(x, smoothOrbY, 0));
-        }
-
-        prevScrollProgress = scrollProgress;
-
-        // Update and draw trail particles
-        trailParticles = trailParticles.filter(p => p.life > 0);
-        trailParticles.forEach(p => { p.update(); p.draw(ctx); });
-        if (trailParticles.length > 300) trailParticles = trailParticles.slice(-300);
-
-        // Update and draw burst particles
-        burstParticles = burstParticles.filter(p => p.life > 0);
-        burstParticles.forEach(p => { p.update(); p.draw(ctx); });
-        if (burstParticles.length > 150) burstParticles = burstParticles.slice(-150);
-
-        // Draw the main glowing orb (on top of everything)
-        orb.update(x, smoothOrbY, scrollVelocity);
-        orb.draw(ctx);
-      }
-
-      // Initialize
-      resizeCanvas();
-      createAmbientSparkles();
-      requestAnimationFrame(animate);
-
-      const ro = new ResizeObserver(() => {
-        resizeCanvas();
-        createAmbientSparkles();
-      });
-      ro.observe(container);
-
-      window.addEventListener('resize', () => {
-        resizeCanvas();
-        createAmbientSparkles();
-      });
-    })();
-
-    // ── PETAL RAIN ──
-    const petalColors = ['#f2c4c4', '#d4a0a0', '#c8e6c9', '#f8bbd0', '#ffe082'];
-    const isMobile = window.innerWidth <= 480;
-    function spawnPetal() {
-      const p = document.createElement('div');
-      p.className = 'petal';
-      p.style.left = Math.random() * 100 + 'vw';
-      p.style.top = '-20px';
-      p.style.background = petalColors[Math.floor(Math.random() * petalColors.length)];
-      const size = isMobile ? (6 + Math.random() * 5) : (8 + Math.random() * 8);
-      p.style.width = size + 'px';
-      p.style.height = (size * 1.25) + 'px';
-      p.style.animationDuration = (6 + Math.random() * 8) + 's';
-      p.style.opacity = 0.5 + Math.random() * 0.4;
-      document.body.appendChild(p);
-      setTimeout(() => p.remove(), 14000);
-    }
-    // Fewer petals on mobile for performance
-    setInterval(spawnPetal, isMobile ? 2500 : 1200);
-
-    // ── PAINT SPLATTER on click ──
-    const splatterColors = ['#f2c4c4', '#d4788a', '#8aad9a', '#c89d6a', '#b0687a'];
-    document.addEventListener('click', e => {
-      if (e.target.closest('#unlock-card') || e.target.closest('a') || e.target.closest('button') || e.target.closest('input') || e.target.closest('.tile')) return;
-      const s = document.createElement('div');
-      s.className = 'splatter';
-      const sz = 30 + Math.random() * 50;
-      Object.assign(s.style, {
-        position: 'fixed',
-        width: sz + 'px', height: sz + 'px',
-        left: (e.clientX - sz / 2) + 'px',
-        top: (e.clientY - sz / 2) + 'px',
-        background: splatterColors[Math.floor(Math.random() * splatterColors.length)],
-        borderRadius: `${40 + Math.random() * 30}% ${30 + Math.random() * 40}% ${40 + Math.random() * 30}% ${30 + Math.random() * 40}%`,
-        pointerEvents: 'none',
-        zIndex: 9995,
-        mixBlendMode: 'multiply',
-        opacity: 0.6
-      });
-      document.body.appendChild(s);
-      setTimeout(() => s.remove(), 2500);
-    });
-
-    // ── SECRET EASTER EGG (10 TAPS) ──
-    let secretTapCount = 0;
-    let secretTapTimer;
-    const secretPopup = document.getElementById('secret-popup');
-    const closeSecret = document.getElementById('close-secret');
-
-    document.addEventListener('click', (e) => {
-      if (e.target.closest('#unlock-card') || e.target.closest('a') || e.target.closest('button') || e.target.closest('input') || e.target.closest('.tile')) return;
-      secretTapCount++;
-      clearTimeout(secretTapTimer);
-
-      if (secretTapCount >= 10) {
-        secretPopup.classList.add('active');
-        confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 }, zIndex: 9999999 });
-        secretTapCount = 0; // Reset after triggering
-      }
-
-      // Reset tap count after 2 seconds of inactivity
-      secretTapTimer = setTimeout(() => { secretTapCount = 0; }, 2000);
-    });
-
-    closeSecret.addEventListener('click', (e) => {
+    if (gPrev) gPrev.addEventListener('click', (e) => {
       e.stopPropagation();
-      secretPopup.classList.remove('active');
+      goToSubImage((currentSubImageIndex - 1 + imgs.length) % imgs.length);
+    });
+    if (gNext) gNext.addEventListener('click', (e) => {
+      e.stopPropagation();
+      goToSubImage((currentSubImageIndex + 1) % imgs.length);
     });
 
-    // ── CLICK OUTSIDE TO CLOSE ──
-    secretPopup.addEventListener('click', (e) => {
-      if (e.target === secretPopup) {
-        secretPopup.classList.remove('active');
-        e.stopPropagation();
+    // Touch swipe for gallery
+    let touchStartX = 0;
+    wrap.addEventListener('touchstart', (e) => { touchStartX = e.touches[0].clientX; }, { passive: true });
+    wrap.addEventListener('touchend', (e) => {
+      const dx = e.changedTouches[0].clientX - touchStartX;
+      if (Math.abs(dx) > 40) {
+        goToSubImage(dx < 0
+          ? (currentSubImageIndex + 1) % imgs.length
+          : (currentSubImageIndex - 1 + imgs.length) % imgs.length
+        );
       }
+    }, { passive: true });
+
+  } else if (m.video_url) {
+    wrap.innerHTML = `
+      <video src="${m.video_url}"
+             controls autoplay playsinline
+             ${m.image_url ? `poster="${m.image_url}"` : ''}
+             class="w-full max-h-[55vh] object-contain block rounded-[12px]"></video>
+    `;
+    pauseBackgroundMusic();
+  } else {
+    wrap.innerHTML = `
+      <img src="${m.image_url}" alt="${m.title}"
+           class="w-full max-h-[55vh] object-contain block rounded-[12px]" />
+    `;
+  }
+}
+
+function openMediaLightbox(index) {
+  const modal = document.getElementById('media-lightbox');
+  if (!modal) return;
+  renderLightboxContent(index, 0);
+  modal.classList.add('active');
+  modal.setAttribute('aria-hidden', 'false');
+}
+
+function closeMediaLightbox() {
+  const modal = document.getElementById('media-lightbox');
+  if (!modal) return;
+  modal.classList.remove('active');
+  modal.setAttribute('aria-hidden', 'true');
+
+  const wrap = document.getElementById('lightbox-media-wrap');
+  if (wrap) {
+    const vid = wrap.querySelector('video');
+    if (vid) vid.pause();
+    setTimeout(() => { wrap.innerHTML = ''; }, 300);
+  }
+  resumeBackgroundMusic();
+}
+
+function initMediaLightbox() {
+  const modal = document.getElementById('media-lightbox');
+  const closeBtn = document.getElementById('lightbox-close');
+  const backdrop = document.getElementById('lightbox-backdrop');
+  const prevBtn = document.getElementById('lightbox-prev');
+  const nextBtn = document.getElementById('lightbox-next');
+
+  if (closeBtn) closeBtn.addEventListener('click', closeMediaLightbox);
+  if (backdrop) backdrop.addEventListener('click', closeMediaLightbox);
+
+  if (prevBtn) {
+    prevBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const newIdx = (currentLightboxIndex - 1 + memories.length) % memories.length;
+      renderLightboxContent(newIdx, 0);
+    });
+  }
+
+  if (nextBtn) {
+    nextBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const newIdx = (currentLightboxIndex + 1) % memories.length;
+      renderLightboxContent(newIdx, 0);
+    });
+  }
+
+  document.addEventListener('keydown', (e) => {
+    if (!modal || !modal.classList.contains('active')) return;
+    if (e.key === 'Escape') closeMediaLightbox();
+    const m = memories[currentLightboxIndex];
+    // Left/Right navigate sub-images first, then switch memories
+    if (e.key === 'ArrowLeft') {
+      if (m && m.images && m.images.length > 1) {
+        renderLightboxContent(currentLightboxIndex, (currentSubImageIndex - 1 + m.images.length) % m.images.length);
+      } else if (prevBtn) prevBtn.click();
+    }
+    if (e.key === 'ArrowRight') {
+      if (m && m.images && m.images.length > 1) {
+        renderLightboxContent(currentLightboxIndex, (currentSubImageIndex + 1) % m.images.length);
+      } else if (nextBtn) nextBtn.click();
+    }
+  });
+
+  // Attach click to all polaroid cards
+  document.querySelectorAll('.polaroid').forEach(card => {
+    card.addEventListener('click', (e) => {
+      if (e.target.closest('.volume-btn')) return;
+      const idx = parseInt(card.getAttribute('data-index'), 10);
+      if (!isNaN(idx)) openMediaLightbox(idx);
+    });
+  });
+}
+
+initMediaLightbox();
+
+// ── VIDEO PLAYERS INITIALIZATION ──
+let bgMusicPausedByVideo = false;
+
+function pauseBackgroundMusic() {
+  const bgMusic = document.getElementById('bg-music');
+  if (bgMusic && !bgMusic.paused) {
+    bgMusic.pause();
+    pauseEq();
+    bgMusicPausedByVideo = true;
+  }
+}
+
+function resumeBackgroundMusic() {
+  const bgMusic = document.getElementById('bg-music');
+  if (bgMusic && bgMusicPausedByVideo) {
+    bgMusic.play().catch(() => { });
+    playEq();
+    bgMusicPausedByVideo = false;
+  }
+}
+
+function initVideoPlayers() {
+  const videoContainers = document.querySelectorAll('.video-container');
+
+  videoContainers.forEach(container => {
+    const video = container.querySelector('video');
+    const polaroid = container.closest('.polaroid');
+    const volumeBtn = container.querySelector('.volume-btn');
+    const muteIcon = volumeBtn ? volumeBtn.querySelector('.mute-icon') : null;
+    const unmuteIcon = volumeBtn ? volumeBtn.querySelector('.unmute-icon') : null;
+
+    if (!video || !polaroid) return;
+
+    polaroid.addEventListener('mouseenter', () => {
+      video.play().then(() => {
+        container.classList.add('playing');
+        if (!video.muted) {
+          pauseBackgroundMusic();
+        }
+      }).catch(err => console.log("Video play failed:", err));
     });
 
-    // ── MUSIC TOGGLE ──
-    const bgMusic = document.getElementById('bg-music');
-    const eqDisplay = document.getElementById('eq-display');
-    const musicLabel = document.getElementById('music-label');
-    let musicStarted = false;
+    polaroid.addEventListener('mouseleave', () => {
+      video.pause();
+      container.classList.remove('playing');
+      resumeBackgroundMusic();
+    });
 
-    bgMusic.volume = 0.25;
-    bgMusic.play().then(() => { musicStarted = true; })
-      .catch(() => { pauseEq(); musicLabel.textContent = 'Play Music'; });
+    if (volumeBtn) {
+      volumeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        e.preventDefault();
 
-    document.addEventListener('click', () => {
-      if (!musicStarted) {
-        bgMusic.play();
+        if (video.muted) {
+          video.muted = false;
+          if (muteIcon) muteIcon.classList.add('hidden');
+          if (unmuteIcon) unmuteIcon.classList.remove('hidden');
+          pauseBackgroundMusic();
+        } else {
+          video.muted = true;
+          if (muteIcon) muteIcon.classList.remove('hidden');
+          if (unmuteIcon) unmuteIcon.classList.add('hidden');
+          resumeBackgroundMusic();
+        }
+      });
+    }
+  });
+}
+
+initVideoPlayers();
+
+// ── INTERSECTION OBSERVER ──
+const io = new IntersectionObserver((entries) => {
+  entries.forEach(e => {
+    if (e.isIntersecting) {
+      e.target.classList.add('visible');
+      io.unobserve(e.target);
+    }
+  });
+}, { threshold: 0.12 });
+
+document.querySelectorAll('.fade-up').forEach(el => io.observe(el));
+
+// ── CUSTOM CURSOR ──
+const cursor = document.getElementById('cursor');
+const cursorRing = document.getElementById('cursor-ring');
+let mx = 0, my = 0;
+
+document.addEventListener('mousemove', e => {
+  mx = e.clientX; my = e.clientY;
+  cursor.style.left = mx + 'px';
+  cursor.style.top = my + 'px';
+});
+
+(function animateRing() {
+  cursorRing.style.left = mx + 'px';
+  cursorRing.style.top = my + 'px';
+  requestAnimationFrame(animateRing);
+})();
+
+function updateCursorHoverEvents() {
+  document.querySelectorAll('button, a, input[type=range], .tile').forEach(el => {
+    el.addEventListener('mouseenter', () => {
+      cursor.style.width = '20px'; cursor.style.height = '20px';
+      cursorRing.style.transform = 'translate(-50%,-50%) scale(1.5)';
+    });
+    el.addEventListener('mouseleave', () => {
+      cursor.style.width = '12px'; cursor.style.height = '12px';
+      cursorRing.style.transform = 'translate(-50%,-50%) scale(1)';
+    });
+  });
+}
+
+// ── SCROLL PROGRESS ──
+const progress = document.getElementById('scroll-progress');
+const vignette = document.getElementById('cinematic-vignette');
+const timelineSec = document.getElementById('timeline');
+
+window.addEventListener('scroll', () => {
+  const pct = window.scrollY / (document.documentElement.scrollHeight - window.innerHeight);
+  progress.style.transform = `scaleX(${Math.min(pct, 1)})`;
+
+  // Cinematic vignette: activate when timeline section is in view
+  if (timelineSec) {
+    const rect = timelineSec.getBoundingClientRect();
+    const vh = window.innerHeight;
+    // Section is considered "in view" when at least partially visible
+    const inView = rect.top < vh * 0.7 && rect.bottom > vh * 0.3;
+    if (inView) {
+      vignette.classList.add('active');
+    } else {
+      vignette.classList.remove('active');
+    }
+  }
+});
+
+// ── TIMELINE SPARKLING LIGHT ──
+(function initTimelineSparkle() {
+  const canvas = document.getElementById('timeline-sparkle-canvas');
+  if (!canvas) return;
+  const ctx = canvas.getContext('2d');
+  const container = document.getElementById('memories-container');
+  const timelineSection = document.getElementById('timeline');
+
+  let trailParticles = [];
+  let burstParticles = [];
+  let scrollProgress = 0;
+  let prevScrollProgress = 0;
+  let smoothOrbY = 0;
+  let scrollVelocity = 0;
+  let frameTime = 0;
+  let animFrameId;
+
+  const sparkleColors = [
+    { r: 255, g: 220, b: 230 },  // soft pink
+    { r: 212, g: 120, b: 138 },  // rose
+    { r: 240, g: 200, b: 130 },  // warm gold
+    { r: 255, g: 255, b: 255 },  // white
+    { r: 255, g: 240, b: 200 },  // warm light
+    { r: 176, g: 104, b: 122 },  // mauve
+    { r: 255, g: 180, b: 200 },  // hot pink glow
+    { r: 200, g: 170, b: 255 },  // lavender
+  ];
+
+  function resizeCanvas() {
+    canvas.width = container.offsetWidth;
+    canvas.height = container.offsetHeight;
+  }
+
+  function getTimelineX() {
+    return canvas.width / 2;
+  }
+
+  function updateScrollProgress() {
+    const rect = timelineSection.getBoundingClientRect();
+    const sectionTop = rect.top + window.scrollY;
+    const sectionHeight = rect.height;
+    const viewportHeight = window.innerHeight;
+    const scrollStart = sectionTop - viewportHeight;
+    const scrollEnd = sectionTop + sectionHeight;
+    const scrollRange = scrollEnd - scrollStart;
+    if (scrollRange <= 0) { scrollProgress = 0; return; }
+    scrollProgress = Math.max(0, Math.min(1, (window.scrollY - scrollStart) / scrollRange));
+  }
+
+  // ── Main Glowing Orb with corona & lens flare ──
+  class GlowOrb {
+    constructor() {
+      this.x = 0;
+      this.y = 0;
+      this.radius = 8;
+      this.pulsePhase = 0;
+      this.flarePhase = 0;
+    }
+
+    update(x, y, velocity) {
+      this.x = x;
+      this.y = y;
+      this.pulsePhase += 0.07;
+      this.flarePhase += 0.03;
+      this.intensity = Math.min(1, 0.6 + velocity * 8);
+    }
+
+    draw(ctx) {
+      const pulse = 1 + Math.sin(this.pulsePhase) * 0.35;
+      const r = this.radius * pulse;
+      const int = this.intensity;
+
+      // Wide ambient glow (big halo)
+      const g4 = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 14);
+      g4.addColorStop(0, `rgba(212, 120, 138, ${0.08 * int})`);
+      g4.addColorStop(0.3, `rgba(255, 180, 200, ${0.04 * int})`);
+      g4.addColorStop(1, 'transparent');
+      ctx.fillStyle = g4;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r * 14, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Corona rays
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      const rayCount = 6;
+      for (let i = 0; i < rayCount; i++) {
+        const angle = (i / rayCount) * Math.PI * 2 + this.flarePhase;
+        const rayLen = r * (5 + Math.sin(this.pulsePhase + i * 1.3) * 2.5);
+        const rayWidth = r * 0.4;
+        ctx.save();
+        ctx.rotate(angle);
+        const rayGrad = ctx.createLinearGradient(0, 0, rayLen, 0);
+        rayGrad.addColorStop(0, `rgba(255, 255, 255, ${0.25 * int})`);
+        rayGrad.addColorStop(0.3, `rgba(255, 200, 220, ${0.12 * int})`);
+        rayGrad.addColorStop(1, 'transparent');
+        ctx.fillStyle = rayGrad;
+        ctx.beginPath();
+        ctx.moveTo(0, -rayWidth * 0.15);
+        ctx.lineTo(rayLen, 0);
+        ctx.lineTo(0, rayWidth * 0.15);
+        ctx.closePath();
+        ctx.fill();
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // Mid glow
+      const g2 = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 4);
+      g2.addColorStop(0, `rgba(255, 255, 255, ${0.7 * int})`);
+      g2.addColorStop(0.2, `rgba(255, 220, 230, ${0.4 * int})`);
+      g2.addColorStop(0.5, `rgba(212, 120, 138, ${0.2 * int})`);
+      g2.addColorStop(1, 'transparent');
+      ctx.fillStyle = g2;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r * 4, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Bright core
+      const g1 = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, r * 1.2);
+      g1.addColorStop(0, `rgba(255, 255, 255, ${0.98 * int})`);
+      g1.addColorStop(0.4, `rgba(255, 240, 245, ${0.8 * int})`);
+      g1.addColorStop(0.7, `rgba(242, 196, 196, ${0.3 * int})`);
+      g1.addColorStop(1, 'transparent');
+      ctx.fillStyle = g1;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, r * 1.2, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // ── Sparkle particle that trails behind ──
+  class SparkleParticle {
+    constructor(x, y, velocity) {
+      const color = sparkleColors[Math.floor(Math.random() * sparkleColors.length)];
+      const spread = 30 + velocity * 150;
+      this.x = x + (Math.random() - 0.5) * spread;
+      this.y = y + (Math.random() - 0.5) * 15;
+      this.r = color.r;
+      this.g = color.g;
+      this.b = color.b;
+      this.radius = Math.random() * 3 + 0.8;
+      this.life = 1;
+      this.decay = 0.005 + Math.random() * 0.012;
+      this.vx = (Math.random() - 0.5) * (1.5 + velocity * 4);
+      this.vy = (Math.random() - 0.5) * 0.8 - 0.2;
+      this.gravity = 0.008 + Math.random() * 0.01;
+      this.twinkleSpeed = 0.06 + Math.random() * 0.12;
+      this.twinklePhase = Math.random() * Math.PI * 2;
+      this.type = Math.random();  // determines visual style
+    }
+
+    update() {
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vy += this.gravity;
+      this.vx *= 0.97;
+      this.life -= this.decay;
+      this.twinklePhase += this.twinkleSpeed;
+    }
+
+    draw(ctx) {
+      if (this.life <= 0) return;
+      const twinkle = 0.3 + Math.sin(this.twinklePhase) * 0.7;
+      const alpha = this.life * twinkle;
+
+      if (this.type < 0.25) {
+        this.drawStar(ctx, alpha);
+      } else if (this.type < 0.5) {
+        this.drawDiamond(ctx, alpha);
+      } else {
+        this.drawDot(ctx, alpha);
+      }
+    }
+
+    drawDot(ctx, alpha) {
+      const glowR = this.radius * 5;
+      const grd = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowR);
+      grd.addColorStop(0, `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha * 0.35})`);
+      grd.addColorStop(0.5, `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha * 0.08})`);
+      grd.addColorStop(1, 'transparent');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, glowR, 0, Math.PI * 2);
+      ctx.fill();
+
+      ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius * this.life, 0, Math.PI * 2);
+      ctx.fill();
+    }
+
+    drawStar(ctx, alpha) {
+      const size = this.radius * 3 * this.life;
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.twinklePhase * 0.5);
+
+      // Cross sparkle
+      ctx.strokeStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha * 0.9})`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(-size, 0); ctx.lineTo(size, 0);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(0, -size); ctx.lineTo(0, size);
+      ctx.stroke();
+
+      // Diagonal lines (8-point star)
+      const ds = size * 0.65;
+      ctx.lineWidth = 0.6;
+      ctx.beginPath();
+      ctx.moveTo(-ds, -ds); ctx.lineTo(ds, ds);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(ds, -ds); ctx.lineTo(-ds, ds);
+      ctx.stroke();
+
+      // Center bright dot
+      ctx.fillStyle = `rgba(255, 255, 255, ${alpha * 0.9})`;
+      ctx.beginPath();
+      ctx.arc(0, 0, this.radius * 0.7 * this.life, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+
+    drawDiamond(ctx, alpha) {
+      const size = this.radius * 2.2 * this.life;
+      ctx.save();
+      ctx.translate(this.x, this.y);
+      ctx.rotate(this.twinklePhase * 0.3);
+
+      ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${alpha * 0.7})`;
+      ctx.beginPath();
+      ctx.moveTo(0, -size);
+      ctx.lineTo(size * 0.5, 0);
+      ctx.lineTo(0, size);
+      ctx.lineTo(-size * 0.5, 0);
+      ctx.closePath();
+      ctx.fill();
+
+      // Inner glow
+      const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, size * 0.8);
+      grd.addColorStop(0, `rgba(255, 255, 255, ${alpha * 0.5})`);
+      grd.addColorStop(1, 'transparent');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(0, 0, size * 0.8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.restore();
+    }
+  }
+
+  // ── Burst particle (explodes on fast scroll) ──
+  class BurstParticle {
+    constructor(x, y) {
+      const color = sparkleColors[Math.floor(Math.random() * sparkleColors.length)];
+      const angle = Math.random() * Math.PI * 2;
+      const speed = 1 + Math.random() * 4;
+      this.x = x;
+      this.y = y;
+      this.r = color.r;
+      this.g = color.g;
+      this.b = color.b;
+      this.radius = Math.random() * 2 + 1;
+      this.life = 1;
+      this.decay = 0.015 + Math.random() * 0.025;
+      this.vx = Math.cos(angle) * speed;
+      this.vy = Math.sin(angle) * speed;
+      this.trail = [];
+    }
+
+    update() {
+      this.trail.push({ x: this.x, y: this.y, life: this.life });
+      if (this.trail.length > 6) this.trail.shift();
+      this.x += this.vx;
+      this.y += this.vy;
+      this.vx *= 0.95;
+      this.vy *= 0.95;
+      this.life -= this.decay;
+    }
+
+    draw(ctx) {
+      if (this.life <= 0) return;
+      // Trail
+      this.trail.forEach((t, i) => {
+        const a = t.life * (i / this.trail.length) * 0.3;
+        ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${a})`;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, this.radius * 0.5 * (i / this.trail.length), 0, Math.PI * 2);
+        ctx.fill();
+      });
+      // Head
+      ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${this.life})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, this.radius * this.life, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  // ── Ambient sparkle placed along sinusoidal path ──
+  class AmbientSparkle {
+    constructor(x, y, idx) {
+      const color = sparkleColors[Math.floor(Math.random() * sparkleColors.length)];
+      this.baseX = x + Math.sin(idx * 0.6) * 18;
+      this.x = this.baseX;
+      this.y = y;
+      this.r = color.r;
+      this.g = color.g;
+      this.b = color.b;
+      this.radius = Math.random() * 2 + 0.4;
+      this.twinkleSpeed = 0.025 + Math.random() * 0.06;
+      this.twinklePhase = Math.random() * Math.PI * 2;
+      this.baseAlpha = 0.1 + Math.random() * 0.25;
+      this.driftPhase = Math.random() * Math.PI * 2;
+      this.driftSpeed = 0.008 + Math.random() * 0.015;
+      this.driftAmp = 3 + Math.random() * 8;
+    }
+
+    update() {
+      this.twinklePhase += this.twinkleSpeed;
+      this.driftPhase += this.driftSpeed;
+      this.x = this.baseX + Math.sin(this.driftPhase) * this.driftAmp;
+    }
+
+    draw(ctx, orbY, scrollVel) {
+      const distToOrb = Math.abs(this.y - orbY);
+      const proximity = Math.max(0, 1 - distToOrb / 250);
+      const twinkle = 0.2 + Math.sin(this.twinklePhase) * 0.8;
+      // Sparkles light up much more as the orb passes near them
+      const excite = proximity * (1 + scrollVel * 6);
+      const alpha = (this.baseAlpha + excite * 0.7) * twinkle;
+
+      if (alpha < 0.01) return;
+
+      // Glow halo
+      const glowRadius = this.radius * (5 + proximity * 6);
+      const grd = ctx.createRadialGradient(this.x, this.y, 0, this.x, this.y, glowRadius);
+      grd.addColorStop(0, `rgba(${this.r}, ${this.g}, ${this.b}, ${Math.min(alpha * 0.35, 0.5)})`);
+      grd.addColorStop(0.5, `rgba(${this.r}, ${this.g}, ${this.b}, ${Math.min(alpha * 0.08, 0.15)})`);
+      grd.addColorStop(1, 'transparent');
+      ctx.fillStyle = grd;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, glowRadius, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Core
+      const coreR = this.radius * (1 + proximity * 1.5);
+      ctx.fillStyle = `rgba(${this.r}, ${this.g}, ${this.b}, ${Math.min(alpha, 1)})`;
+      ctx.beginPath();
+      ctx.arc(this.x, this.y, coreR, 0, Math.PI * 2);
+      ctx.fill();
+
+      // Bright flash when orb is very close
+      if (proximity > 0.7) {
+        ctx.fillStyle = `rgba(255, 255, 255, ${(proximity - 0.7) * 2 * twinkle})`;
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius * 0.6, 0, Math.PI * 2);
+        ctx.fill();
+      }
+    }
+  }
+
+  const orb = new GlowOrb();
+  let ambientSparkles = [];
+
+  function createAmbientSparkles() {
+    ambientSparkles = [];
+    const x = getTimelineX();
+    const h = canvas.height;
+    const count = Math.floor(h / 10); // denser
+    for (let i = 0; i < count; i++) {
+      const y = (i / count) * h;
+      ambientSparkles.push(new AmbientSparkle(x, y, i));
+    }
+  }
+
+  // Draw a glowing energy river instead of a boring straight line
+  function drawEnergyTrail(ctx, orbY, velocity) {
+    const x = getTimelineX();
+    const h = canvas.height;
+    const activeY = scrollProgress * h;
+    const velFactor = Math.min(1, velocity * 12);
+
+    // ── Lit-up section: glowing river from top to orb position ──
+    if (activeY > 2) {
+      // Wide soft glow behind the trail
+      const wideGlow = ctx.createLinearGradient(x, 0, x, activeY);
+      wideGlow.addColorStop(0, 'transparent');
+      wideGlow.addColorStop(0.3, `rgba(212, 120, 138, ${0.03 + velFactor * 0.04})`);
+      wideGlow.addColorStop(0.8, `rgba(255, 200, 220, ${0.06 + velFactor * 0.06})`);
+      wideGlow.addColorStop(1, `rgba(255, 255, 255, ${0.05 + velFactor * 0.05})`);
+      ctx.fillStyle = wideGlow;
+      ctx.beginPath();
+      // Wavy path for the wide glow
+      const waveWidth = 20 + velFactor * 15;
+      ctx.moveTo(x - waveWidth, 0);
+      for (let y = 0; y <= activeY; y += 5) {
+        const wave = Math.sin(y * 0.015 + frameTime * 0.002) * (6 + velFactor * 4);
+        ctx.lineTo(x - waveWidth + wave, y);
+      }
+      for (let y = activeY; y >= 0; y -= 5) {
+        const wave = Math.sin(y * 0.015 + frameTime * 0.002) * (6 + velFactor * 4);
+        ctx.lineTo(x + waveWidth + wave, y);
+      }
+      ctx.closePath();
+      ctx.fill();
+
+      // Inner bright core stream
+      ctx.save();
+      ctx.lineWidth = 1.5 + velFactor * 1.5;
+      ctx.lineCap = 'round';
+      const coreGrad = ctx.createLinearGradient(x, 0, x, activeY);
+      coreGrad.addColorStop(0, 'transparent');
+      coreGrad.addColorStop(0.2, `rgba(242, 196, 196, ${0.2 + velFactor * 0.15})`);
+      coreGrad.addColorStop(0.7, `rgba(212, 120, 138, ${0.35 + velFactor * 0.2})`);
+      coreGrad.addColorStop(1, `rgba(255, 255, 255, ${0.5 + velFactor * 0.3})`);
+      ctx.strokeStyle = coreGrad;
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      for (let y = 0; y <= activeY; y += 3) {
+        const wave = Math.sin(y * 0.02 + frameTime * 0.003) * (3 + velFactor * 3);
+        ctx.lineTo(x + wave, y);
+      }
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // ── Unlit section below orb: very faint dotted path ──
+    const remainStart = Math.min(activeY + 20, h);
+    if (remainStart < h) {
+      ctx.save();
+      ctx.setLineDash([2, 12]);
+      ctx.strokeStyle = `rgba(212, 120, 138, 0.06)`;
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.moveTo(x, remainStart);
+      ctx.lineTo(x, h);
+      ctx.stroke();
+      ctx.setLineDash([]);
+      ctx.restore();
+    }
+  }
+
+  function animate(timestamp) {
+    animFrameId = requestAnimationFrame(animate);
+    if (canvas.width === 0 || canvas.height === 0) return;
+    frameTime = timestamp || 0;
+
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    updateScrollProgress();
+
+    const x = getTimelineX();
+    const targetOrbY = scrollProgress * canvas.height;
+    // Smooth interpolation for the orb position
+    smoothOrbY += (targetOrbY - smoothOrbY) * 0.12;
+
+    const scrollDelta = Math.abs(scrollProgress - prevScrollProgress);
+    scrollVelocity += (scrollDelta - scrollVelocity) * 0.15;
+
+    // Draw the energy river trail
+    drawEnergyTrail(ctx, smoothOrbY, scrollVelocity);
+
+    // Update and draw ambient sparkles (they light up as orb passes)
+    ambientSparkles.forEach(s => {
+      s.update();
+      s.draw(ctx, smoothOrbY, scrollVelocity);
+    });
+
+    // Spawn trailing sparkle particles when scrolling
+    if (scrollDelta > 0.0003) {
+      const spawnCount = Math.min(8, Math.floor(scrollDelta * 1200) + 1);
+      for (let i = 0; i < spawnCount; i++) {
+        trailParticles.push(new SparkleParticle(x, smoothOrbY, scrollVelocity));
+      }
+    }
+
+    // Burst particles on fast scroll
+    if (scrollDelta > 0.004) {
+      const burstCount = Math.min(12, Math.floor(scrollDelta * 2000));
+      for (let i = 0; i < burstCount; i++) {
+        burstParticles.push(new BurstParticle(x, smoothOrbY));
+      }
+    }
+
+    // Ambient trickle even when idle
+    if (Math.random() < 0.08) {
+      trailParticles.push(new SparkleParticle(x, smoothOrbY, 0));
+    }
+
+    prevScrollProgress = scrollProgress;
+
+    // Update and draw trail particles
+    trailParticles = trailParticles.filter(p => p.life > 0);
+    trailParticles.forEach(p => { p.update(); p.draw(ctx); });
+    if (trailParticles.length > 300) trailParticles = trailParticles.slice(-300);
+
+    // Update and draw burst particles
+    burstParticles = burstParticles.filter(p => p.life > 0);
+    burstParticles.forEach(p => { p.update(); p.draw(ctx); });
+    if (burstParticles.length > 150) burstParticles = burstParticles.slice(-150);
+
+    // Draw the main glowing orb (on top of everything)
+    orb.update(x, smoothOrbY, scrollVelocity);
+    orb.draw(ctx);
+  }
+
+  // Initialize
+  resizeCanvas();
+  createAmbientSparkles();
+  requestAnimationFrame(animate);
+
+  const ro = new ResizeObserver(() => {
+    resizeCanvas();
+    createAmbientSparkles();
+  });
+  ro.observe(container);
+
+  window.addEventListener('resize', () => {
+    resizeCanvas();
+    createAmbientSparkles();
+  });
+})();
+
+// ── PETAL RAIN ──
+const petalColors = ['#f2c4c4', '#d4a0a0', '#c8e6c9', '#f8bbd0', '#ffe082'];
+const isMobile = window.innerWidth <= 480;
+function spawnPetal() {
+  const p = document.createElement('div');
+  p.className = 'petal';
+  p.style.left = Math.random() * 100 + 'vw';
+  p.style.top = '-20px';
+  p.style.background = petalColors[Math.floor(Math.random() * petalColors.length)];
+  const size = isMobile ? (6 + Math.random() * 5) : (8 + Math.random() * 8);
+  p.style.width = size + 'px';
+  p.style.height = (size * 1.25) + 'px';
+  p.style.animationDuration = (6 + Math.random() * 8) + 's';
+  p.style.opacity = 0.5 + Math.random() * 0.4;
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 14000);
+}
+// Fewer petals on mobile for performance
+setInterval(spawnPetal, isMobile ? 2500 : 1200);
+
+// ── PAINT SPLATTER on click ──
+const splatterColors = ['#f2c4c4', '#d4788a', '#8aad9a', '#c89d6a', '#b0687a'];
+document.addEventListener('click', e => {
+  if (e.target.closest('#unlock-card') || e.target.closest('a') || e.target.closest('button') || e.target.closest('input') || e.target.closest('.tile')) return;
+  const s = document.createElement('div');
+  s.className = 'splatter';
+  const sz = 30 + Math.random() * 50;
+  Object.assign(s.style, {
+    position: 'fixed',
+    width: sz + 'px', height: sz + 'px',
+    left: (e.clientX - sz / 2) + 'px',
+    top: (e.clientY - sz / 2) + 'px',
+    background: splatterColors[Math.floor(Math.random() * splatterColors.length)],
+    borderRadius: `${40 + Math.random() * 30}% ${30 + Math.random() * 40}% ${40 + Math.random() * 30}% ${30 + Math.random() * 40}%`,
+    pointerEvents: 'none',
+    zIndex: 9995,
+    mixBlendMode: 'multiply',
+    opacity: 0.6
+  });
+  document.body.appendChild(s);
+  setTimeout(() => s.remove(), 2500);
+});
+
+// ── SECRET EASTER EGG (10 TAPS) ──
+let secretTapCount = 0;
+let secretTapTimer;
+const secretPopup = document.getElementById('secret-popup');
+const closeSecret = document.getElementById('close-secret');
+
+document.addEventListener('click', (e) => {
+  if (e.target.closest('#unlock-card') || e.target.closest('a') || e.target.closest('button') || e.target.closest('input') || e.target.closest('.tile')) return;
+  secretTapCount++;
+  clearTimeout(secretTapTimer);
+
+  if (secretTapCount >= 10) {
+    secretPopup.classList.add('active');
+    confetti({ particleCount: 150, spread: 80, origin: { y: 0.5 }, zIndex: 9999999 });
+    secretTapCount = 0; // Reset after triggering
+  }
+
+  // Reset tap count after 2 seconds of inactivity
+  secretTapTimer = setTimeout(() => { secretTapCount = 0; }, 2000);
+});
+
+closeSecret.addEventListener('click', (e) => {
+  e.stopPropagation();
+  secretPopup.classList.remove('active');
+});
+
+// ── CLICK OUTSIDE TO CLOSE ──
+secretPopup.addEventListener('click', (e) => {
+  if (e.target === secretPopup) {
+    secretPopup.classList.remove('active');
+    e.stopPropagation();
+  }
+});
+
+// ── MUSIC TOGGLE & CONTROLS ──
+const bgMusic = document.getElementById('bg-music');
+const eqDisplay = document.getElementById('eq-display');
+const musicLabel = document.getElementById('music-label');
+let musicStarted = false;
+
+if (bgMusic) bgMusic.volume = 0.25;
+pauseEq();
+if (musicLabel) musicLabel.textContent = 'Play Music';
+
+function startMainBackgroundMusic() {
+  if (!bgMusic || musicStarted) return;
+  bgMusic.play().then(() => {
+    musicStarted = true;
+    playEq();
+    if (musicLabel) musicLabel.textContent = 'Now Playing';
+  }).catch(() => {
+    pauseEq();
+    if (musicLabel) musicLabel.textContent = 'Play Music';
+    // Fallback: start on the user's next click on the revealed page
+    const onFirstPageClick = () => {
+      if (!musicStarted && !bgMusicPausedByVideo) {
+        bgMusic.play().then(() => {
+          musicStarted = true;
+          playEq();
+          if (musicLabel) musicLabel.textContent = 'Now Playing';
+        }).catch(() => { });
+      }
+      document.removeEventListener('click', onFirstPageClick);
+    };
+    document.addEventListener('click', onFirstPageClick);
+  });
+}
+
+if (document.getElementById('music-toggle')) {
+  document.getElementById('music-toggle').addEventListener('click', e => {
+    e.stopPropagation();
+    bgMusicPausedByVideo = false; // Reset video music pause state on manual toggle
+    if (bgMusic.paused) {
+      bgMusic.play().then(() => {
         musicStarted = true;
         playEq();
-        musicLabel.textContent = 'Now Playing';
-      }
-    }, { once: true });
+        if (musicLabel) musicLabel.textContent = 'Now Playing';
+      }).catch(() => { });
+    } else {
+      bgMusic.pause();
+      pauseEq();
+      if (musicLabel) musicLabel.textContent = 'Play Music';
+    }
+  });
+}
 
-    document.getElementById('music-toggle').addEventListener('click', e => {
-      e.stopPropagation();
-      bgMusicPausedByVideo = false; // Reset video music pause state on manual toggle
-      if (bgMusic.paused) {
-        bgMusic.play();
-        playEq();
-        musicLabel.textContent = 'Now Playing';
-      } else {
-        bgMusic.pause();
-        pauseEq();
-        musicLabel.textContent = 'Play Music';
-      }
+function playEq() { if (eqDisplay) eqDisplay.classList.remove('eq-paused'); }
+function pauseEq() { if (eqDisplay) eqDisplay.classList.add('eq-paused'); }
+
+// ── IDLE FLOATERS ──
+const nicknames = ['tattt', 'suar', 'bhaisiya', 'gawar', 'gobar', 'gadhi'];
+const floaterText = document.getElementById('floater-text');
+const funkyColors = ['var(--rose)', 'var(--mauve)', 'var(--sage)', 'var(--gold)'];
+
+function showFloater() {
+  const text = nicknames[Math.floor(Math.random() * nicknames.length)];
+  const color = funkyColors[Math.floor(Math.random() * funkyColors.length)];
+  const w = window.innerWidth, h = window.innerHeight;
+  // Keep floaters within bounds on mobile
+  const maxLeft = Math.max(50, w - 180);
+  const maxTop = Math.max(50, h - 80);
+
+  floaterText.textContent = text;
+  floaterText.style.color = color;
+  floaterText.style.left = (Math.random() * maxLeft) + 'px';
+  floaterText.style.top = (Math.random() * maxTop) + 'px';
+  floaterText.style.transform = `rotate(${Math.random() * 40 - 20}deg) scale(${1 + Math.random() * 0.4})`;
+  floaterText.style.opacity = '1';
+
+  setTimeout(() => floaterText.style.opacity = '0', 3000);
+}
+
+floaterText.addEventListener('click', (e) => {
+  confetti({
+    particleCount: 30,
+    spread: 40,
+    origin: { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight }
+  });
+  floaterText.style.opacity = '0';
+  floaterText.style.transform = 'scale(2)';
+  if (swapSound) {
+    swapSound.currentTime = 0;
+    swapSound.play().catch(() => { });
+  }
+});
+
+// ── CONTINUOUS FLOATERS ──
+// Show a new nickname (slower on mobile)
+setInterval(showFloater, isMobile ? 5000 : 3500);
+
+// ── PUZZLE MECHANICS ──
+let N = 3;
+let tiles = [];
+let selectedIdx = null;
+let moves = 0;
+let solved = false;
+let hintTimeout = null;
+
+const grid = document.getElementById('grid');
+const progressFill = document.getElementById('progress-fill');
+const progressPct = document.getElementById('progress-pct');
+const moveCount = document.getElementById('move-count');
+const winReveal = document.getElementById('win-reveal');
+const swapSound = document.getElementById('swap-sound');
+if (swapSound) swapSound.volume = 0.3; // keep it subtle
+
+const img = new Image();
+img.src = IMG_SRC;
+img.onload = () => initPuzzle();
+
+function initPuzzle() {
+  solved = false;
+  moves = 0;
+  moveCount.textContent = '0';
+  selectedIdx = null;
+  winReveal.classList.remove('active');
+
+  const total = N * N;
+  tiles = Array.from({ length: total }, (_, i) => i);
+  shuffleTiles();
+  renderGrid();
+  updateProgress();
+}
+
+function shuffleTiles() {
+  const t = tiles.slice();
+  do {
+    for (let i = t.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [t[i], t[j]] = [t[j], t[i]];
+    }
+  } while (t.every((v, i) => v === i));
+  tiles = t;
+}
+
+function renderGrid() {
+  grid.innerHTML = '';
+  grid.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${N}, 1fr)`;
+
+  const gridPadding = isMobile ? 8 : 12; // 4px or 6px each side
+  const w = Math.max(grid.offsetWidth - gridPadding, 200);
+  const tileW = Math.floor(w / N);
+  const tileH = tileW;
+
+  tiles.forEach((solvedPos, idx) => {
+    const div = document.createElement('div');
+    div.className = 'tile';
+    if (solvedPos === idx) div.classList.add('solved-tile');
+
+    const cvs = document.createElement('canvas');
+    cvs.width = tileW;
+    cvs.height = tileH;
+    const ctx = cvs.getContext('2d');
+
+    const col = solvedPos % N;
+    const row = Math.floor(solvedPos / N);
+
+    // Center crop the source image to prevent distortion in square tiles
+    const size = Math.min(img.naturalWidth, img.naturalHeight);
+    const startX = (img.naturalWidth - size) / 2;
+    const startY = (img.naturalHeight - size) / 2;
+    const srcW = size / N;
+    const srcH = size / N;
+
+    ctx.drawImage(img,
+      startX + col * srcW, startY + row * srcH, srcW, srcH,
+      0, 0, tileW, tileH
+    );
+
+    ctx.fillStyle = 'rgba(255,255,255,0.15)';
+    ctx.font = `bold ${tileW * 0.22}px 'Bebas Neue', sans-serif`;
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText(solvedPos + 1, tileW - 6, tileH - 2);
+
+    div.appendChild(cvs);
+
+    div.addEventListener('pointerdown', (e) => {
+      e.preventDefault();
+      handleTileClick(idx);
     });
 
-    function playEq() { eqDisplay.classList.remove('eq-paused'); }
-    function pauseEq() { eqDisplay.classList.add('eq-paused'); }
+    grid.appendChild(div);
+  });
+  updateCursorHoverEvents();
+}
 
-    // ── IDLE FLOATERS ──
-    const nicknames = ['tattt', 'suar', 'bhaisiya', 'gawar', 'gobar', 'gadhi'];
-    const floaterText = document.getElementById('floater-text');
-    const funkyColors = ['var(--rose)', 'var(--mauve)', 'var(--sage)', 'var(--gold)'];
+const moveRoastEl = document.getElementById('move-roast');
+const moveRoasts = [
+  "(legendary)", "(she's trying)", "(progress??)", "(art degree intensifies)",
+  "(almost there, allegedly)", "(this is fine)", "(certified chaos)", "(genius at work 🙄)"
+];
+function maybeShowMoveRoast() {
+  if (!moveRoastEl) return;
+  if (moves > 0 && moves % 3 === 0) {
+    moveRoastEl.textContent = moveRoasts[Math.floor(Math.random() * moveRoasts.length)];
+    moveRoastEl.style.opacity = '1';
+  } else {
+    moveRoastEl.style.opacity = '0';
+  }
+}
 
-    function showFloater() {
-      const text = nicknames[Math.floor(Math.random() * nicknames.length)];
-      const color = funkyColors[Math.floor(Math.random() * funkyColors.length)];
-      const w = window.innerWidth, h = window.innerHeight;
-      // Keep floaters within bounds on mobile
-      const maxLeft = Math.max(50, w - 180);
-      const maxTop = Math.max(50, h - 80);
+function handleTileClick(idx) {
+  if (solved) return;
 
-      floaterText.textContent = text;
-      floaterText.style.color = color;
-      floaterText.style.left = (Math.random() * maxLeft) + 'px';
-      floaterText.style.top = (Math.random() * maxTop) + 'px';
-      floaterText.style.transform = `rotate(${Math.random() * 40 - 20}deg) scale(${1 + Math.random() * 0.4})`;
-      floaterText.style.opacity = '1';
-
-      setTimeout(() => floaterText.style.opacity = '0', 3000);
+  if (selectedIdx === null) {
+    selectedIdx = idx;
+    grid.children[idx].classList.add('selected');
+  } else if (selectedIdx === idx) {
+    grid.children[idx].classList.remove('selected');
+    selectedIdx = null;
+  } else {
+    grid.children[selectedIdx].classList.remove('selected');
+    [tiles[selectedIdx], tiles[idx]] = [tiles[idx], tiles[selectedIdx]];
+    if (swapSound) {
+      swapSound.currentTime = 0;
+      swapSound.play().catch(() => { });
     }
+    moves++;
+    moveCount.textContent = moves;
+    maybeShowMoveRoast();
+    selectedIdx = null;
+    renderGrid();
+    updateProgress();
+    checkWin();
+  }
+}
 
-    floaterText.addEventListener('click', (e) => {
-      confetti({
-        particleCount: 30,
-        spread: 40,
-        origin: { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight }
-      });
-      floaterText.style.opacity = '0';
-      floaterText.style.transform = 'scale(2)';
-      if (swapSound) {
-        swapSound.currentTime = 0;
-        swapSound.play().catch(() => { });
-      }
-    });
+function updateProgress() {
+  const correct = tiles.filter((v, i) => v === i).length;
+  const pct = Math.round((correct / (N * N)) * 100);
+  progressFill.style.width = pct + '%';
+  progressPct.textContent = pct + '%';
+}
 
-    // ── CONTINUOUS FLOATERS ──
-    // Show a new nickname (slower on mobile)
-    setInterval(showFloater, isMobile ? 5000 : 3500);
+function checkWin() {
+  if (tiles.every((v, i) => v === i)) {
+    solved = true;
+    triggerUnlock();
+  }
+}
 
-    // ── PUZZLE MECHANICS ──
-    let N = 3;
-    let tiles = [];
-    let selectedIdx = null;
-    let moves = 0;
-    let solved = false;
-    let hintTimeout = null;
+function triggerUnlock() {
+  // Confetti burst elements
+  confetti({
+    particleCount: 180, spread: 90, origin: { y: 0.6 },
+    colors: ['#f2c4c4', '#d4788a', '#8aad9a', '#c89d6a', '#b0687a']
+  });
+  setTimeout(() => confetti({
+    particleCount: 80, spread: 60, origin: { y: 0.55 }, angle: 60,
+    colors: ['#f2c4c4', '#c89d6a']
+  }), 300);
+  setTimeout(() => confetti({
+    particleCount: 80, spread: 60, origin: { y: 0.55 }, angle: 120,
+    colors: ['#8aad9a', '#d4788a']
+  }), 500);
 
-    const grid = document.getElementById('grid');
-    const progressFill = document.getElementById('progress-fill');
-    const progressPct = document.getElementById('progress-pct');
-    const moveCount = document.getElementById('move-count');
-    const winReveal = document.getElementById('win-reveal');
-    const swapSound = document.getElementById('swap-sound');
-    if (swapSound) swapSound.volume = 0.3; // keep it subtle
+  winReveal.innerHTML = `<img src="${IMG_SRC}" alt="revealed">`;
+  winReveal.classList.add('active');
 
-    const img = new Image();
-    img.src = IMG_SRC;
-    img.onload = () => initPuzzle();
+  Array.from(grid.children).forEach((tile, i) => {
+    setTimeout(() => tile.classList.add('solved-tile', 'hint-flash'), i * 40);
+  });
 
-    function initPuzzle() {
-      solved = false;
-      moves = 0;
-      moveCount.textContent = '0';
-      selectedIdx = null;
-      winReveal.classList.remove('active');
+  setTimeout(() => {
+    const unlockSec = document.getElementById('unlock-section');
+    unlockSec.style.transition = 'opacity 0.6s ease';
+    unlockSec.style.opacity = '0';
 
-      const total = N * N;
-      tiles = Array.from({ length: total }, (_, i) => i);
-      shuffleTiles();
-      renderGrid();
-      updateProgress();
-    }
-
-    function shuffleTiles() {
-      const t = tiles.slice();
-      do {
-        for (let i = t.length - 1; i > 0; i--) {
-          const j = Math.floor(Math.random() * (i + 1));
-          [t[i], t[j]] = [t[j], t[i]];
-        }
-      } while (t.every((v, i) => v === i));
-      tiles = t;
-    }
-
-    function renderGrid() {
-      grid.innerHTML = '';
-      grid.style.gridTemplateColumns = `repeat(${N}, 1fr)`;
-      grid.style.gridTemplateRows = `repeat(${N}, 1fr)`;
-
-      const gridPadding = isMobile ? 8 : 12; // 4px or 6px each side
-      const w = Math.max(grid.offsetWidth - gridPadding, 200);
-      const tileW = Math.floor(w / N);
-      const tileH = tileW;
-
-      tiles.forEach((solvedPos, idx) => {
-        const div = document.createElement('div');
-        div.className = 'tile';
-        if (solvedPos === idx) div.classList.add('solved-tile');
-
-        const cvs = document.createElement('canvas');
-        cvs.width = tileW;
-        cvs.height = tileH;
-        const ctx = cvs.getContext('2d');
-
-        const col = solvedPos % N;
-        const row = Math.floor(solvedPos / N);
-
-        // Center crop the source image to prevent distortion in square tiles
-        const size = Math.min(img.naturalWidth, img.naturalHeight);
-        const startX = (img.naturalWidth - size) / 2;
-        const startY = (img.naturalHeight - size) / 2;
-        const srcW = size / N;
-        const srcH = size / N;
-
-        ctx.drawImage(img,
-          startX + col * srcW, startY + row * srcH, srcW, srcH,
-          0, 0, tileW, tileH
-        );
-
-        ctx.fillStyle = 'rgba(255,255,255,0.15)';
-        ctx.font = `bold ${tileW * 0.22}px 'Bebas Neue', sans-serif`;
-        ctx.textAlign = 'right';
-        ctx.textBaseline = 'bottom';
-        ctx.fillText(solvedPos + 1, tileW - 6, tileH - 2);
-
-        div.appendChild(cvs);
-
-        div.addEventListener('pointerdown', (e) => {
-          e.preventDefault();
-          handleTileClick(idx);
-        });
-
-        grid.appendChild(div);
-      });
-      updateCursorHoverEvents();
-    }
-
-    const moveRoastEl = document.getElementById('move-roast');
-    const moveRoasts = [
-      "(legendary)", "(she's trying)", "(progress??)", "(art degree intensifies)",
-      "(almost there, allegedly)", "(this is fine)", "(certified chaos)", "(genius at work 🙄)"
-    ];
-    function maybeShowMoveRoast() {
-      if (!moveRoastEl) return;
-      if (moves > 0 && moves % 3 === 0) {
-        moveRoastEl.textContent = moveRoasts[Math.floor(Math.random() * moveRoasts.length)];
-        moveRoastEl.style.opacity = '1';
-      } else {
-        moveRoastEl.style.opacity = '0';
-      }
-    }
-
-    function handleTileClick(idx) {
-      if (solved) return;
-
-      if (selectedIdx === null) {
-        selectedIdx = idx;
-        grid.children[idx].classList.add('selected');
-      } else if (selectedIdx === idx) {
-        grid.children[idx].classList.remove('selected');
-        selectedIdx = null;
-      } else {
-        grid.children[selectedIdx].classList.remove('selected');
-        [tiles[selectedIdx], tiles[idx]] = [tiles[idx], tiles[selectedIdx]];
-        if (swapSound) {
-          swapSound.currentTime = 0;
-          swapSound.play().catch(() => { });
-        }
-        moves++;
-        moveCount.textContent = moves;
-        maybeShowMoveRoast();
-        selectedIdx = null;
-        renderGrid();
-        updateProgress();
-        checkWin();
-      }
-    }
-
-    function updateProgress() {
-      const correct = tiles.filter((v, i) => v === i).length;
-      const pct = Math.round((correct / (N * N)) * 100);
-      progressFill.style.width = pct + '%';
-      progressPct.textContent = pct + '%';
-    }
-
-    function checkWin() {
-      if (tiles.every((v, i) => v === i)) {
-        solved = true;
-        triggerUnlock();
-      }
-    }
-
-    function triggerUnlock() {
-      // Confetti burst elements
-      confetti({
-        particleCount: 180, spread: 90, origin: { y: 0.6 },
-        colors: ['#f2c4c4', '#d4788a', '#8aad9a', '#c89d6a', '#b0687a']
-      });
-      setTimeout(() => confetti({
-        particleCount: 80, spread: 60, origin: { y: 0.55 }, angle: 60,
-        colors: ['#f2c4c4', '#c89d6a']
-      }), 300);
-      setTimeout(() => confetti({
-        particleCount: 80, spread: 60, origin: { y: 0.55 }, angle: 120,
-        colors: ['#8aad9a', '#d4788a']
-      }), 500);
-
-      winReveal.innerHTML = `<img src="${IMG_SRC}" alt="revealed">`;
-      winReveal.classList.add('active');
-
-      Array.from(grid.children).forEach((tile, i) => {
-        setTimeout(() => tile.classList.add('solved-tile', 'hint-flash'), i * 40);
-      });
-
+    setTimeout(() => {
+      unlockSec.classList.add('hidden');
+      const letterSec = document.getElementById('letter-section');
+      letterSec.classList.remove('hidden');
       setTimeout(() => {
-        const unlockSec = document.getElementById('unlock-section');
-        unlockSec.style.transition = 'opacity 0.6s ease';
-        unlockSec.style.opacity = '0';
-
-        setTimeout(() => {
-          unlockSec.classList.add('hidden');
-          const letterSec = document.getElementById('letter-section');
-          letterSec.classList.remove('hidden');
-          setTimeout(() => {
-            document.querySelectorAll('#letter-section .fade-up').forEach(el => {
-              io.observe(el);
-            });
-            letterSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
-          }, 60);
-        }, 650);
-      }, 1500);
-    }
-
-    // ── HINT BUTTON / ROAST POPUP CONTENT ──
-    const roastTitleEl = document.getElementById('roast-title');
-    const roastLineEl = document.getElementById('roast-line');
-    const roastLines = [
-      { title: "Chiiii Gawar !!", line: "Dimag nhi hai kya? 🤡" },
-      { title: "Bestie, No.", line: "You call yourself an artist and can't even match colors? Couldn't be me." },
-      { title: "Ouchhh 🙈", line: "Even your worst painting had more structure than this attempt." },
-      { title: "Hint? HINT?", line: "Babe this is a 3x3 grid, not the Mona Lisa. Lock in." },
-      { title: "Embarrassing.", line: "I've seen toddlers solve puzzles faster. With crayons. Backwards." },
-      { title: "Skill Issue.", line: "Maybe stick to digital art where undo exists, hm?" },
-      { title: "Tragic.", line: "This is giving 'forgot how eyes work' energy." }
-    ];
-    document.getElementById('btn-hint').addEventListener('click', () => {
-      if (solved) return;
-      const r = roastLines[Math.floor(Math.random() * roastLines.length)];
-      if (roastTitleEl) roastTitleEl.textContent = r.title;
-      if (roastLineEl) roastLineEl.textContent = r.line;
-      document.getElementById('roast-popup').classList.add('active');
-    });
-
-    document.getElementById('close-roast').addEventListener('click', () => {
-      document.getElementById('roast-popup').classList.remove('active');
-
-      if (hintTimeout) clearTimeout(hintTimeout);
-
-      const wrongIdx = tiles.findIndex((v, i) => v !== i);
-      if (wrongIdx === -1) return;
-
-      const correctHolder = tiles.indexOf(wrongIdx);
-
-      [wrongIdx, correctHolder].forEach(i => {
-        const el = grid.children[i];
-        if (el) {
-          el.classList.add('hint-flash');
-          hintTimeout = setTimeout(() => el.classList.remove('hint-flash'), 600);
-        }
-      });
-    });
-
-    // ── DIFFICULTY CONFIG ──
-    document.querySelectorAll('.diff-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
-        document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-        btn.classList.add('active');
-        N = parseInt(btn.dataset.n);
-        initPuzzle();
-      });
-    });
-
-    window.addEventListener('resize', () => {
-      if (!solved) renderGrid();
-    });
-
-    // ── STICKER INTERACTIONS ──
-    document.querySelectorAll('.sticker').forEach(st => {
-      st.addEventListener('click', (e) => {
-        confetti({
-          particleCount: 40,
-          spread: 50,
-          origin: { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight },
-          colors: ['#f2c4c4', '#d4788a', '#8aad9a', '#c89d6a', '#b0687a']
+        document.querySelectorAll('#letter-section .fade-up').forEach(el => {
+          io.observe(el);
         });
-      });
-    });
+        letterSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }, 60);
+    }, 650);
+  }, 1500);
+}
 
-    // ── DODGING GIFT BUTTON ──
-    const giftBtn = document.getElementById('gift-btn');
-    const giftMsg = document.getElementById('gift-msg');
-    let hoverCount = 0;
-    const maxHovers = ('ontouchstart' in window) || (window.innerWidth <= 480) ? 2 : 6;
+// ── HINT BUTTON / ROAST POPUP CONTENT ──
+const roastTitleEl = document.getElementById('roast-title');
+const roastLineEl = document.getElementById('roast-line');
+const roastLines = [
+  { title: "Chiiii Gawar !!", line: "Dimag nhi hai kya? 🤡" },
+  { title: "Bestie, No.", line: "You call yourself an artist and can't even match colors? Couldn't be me." },
+  { title: "Ouchhh 🙈", line: "Even your worst painting had more structure than this attempt." },
+  { title: "Hint? HINT?", line: "Babe this is a 3x3 grid, not the Mona Lisa. Lock in." },
+  { title: "Embarrassing.", line: "I've seen toddlers solve puzzles faster. With crayons. Backwards." },
+  { title: "Skill Issue.", line: "Maybe stick to digital art where undo exists, hm?" },
+  { title: "Tragic.", line: "This is giving 'forgot how eyes work' energy." }
+];
+document.getElementById('btn-hint').addEventListener('click', () => {
+  if (solved) return;
+  const r = roastLines[Math.floor(Math.random() * roastLines.length)];
+  if (roastTitleEl) roastTitleEl.textContent = r.title;
+  if (roastLineEl) roastLineEl.textContent = r.line;
+  document.getElementById('roast-popup').classList.add('active');
+});
 
-    if (giftBtn) {
-      const moveBtn = () => {
-        if (hoverCount >= maxHovers) return;
+document.getElementById('close-roast').addEventListener('click', () => {
+  document.getElementById('roast-popup').classList.remove('active');
 
-        hoverCount++;
-        const container = giftBtn.parentElement;
-        const containerRect = container.getBoundingClientRect();
+  if (hintTimeout) clearTimeout(hintTimeout);
 
-        const maxX = containerRect.width / 2 - giftBtn.offsetWidth / 2;
-        const maxY = 60;
+  const wrongIdx = tiles.findIndex((v, i) => v !== i);
+  if (wrongIdx === -1) return;
 
-        const randomX = (Math.random() - 0.5) * maxX * 2.5;
-        const randomY = (Math.random() - 0.5) * maxY * 2.5;
+  const correctHolder = tiles.indexOf(wrongIdx);
 
-        giftBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
-
-        const teases = ["Too slow! 🐢", "Almost! 😜", "Try again! 😂", "Missed me! 💨", "You're bad at this 🤡", "Okay fine... 🙄"];
-        if (hoverCount <= teases.length) {
-          giftBtn.textContent = teases[hoverCount - 1];
-        }
-      };
-
-      giftBtn.addEventListener('mouseover', moveBtn);
-      giftBtn.addEventListener('touchstart', (e) => {
-        if (hoverCount < maxHovers) {
-          e.preventDefault();
-          moveBtn();
-        }
-      });
-
-      giftBtn.addEventListener('click', () => {
-        confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
-        giftBtn.style.display = 'none';
-        giftMsg.innerHTML = "Your gift is my presence in your life.<br/>You're welcome. 😎✨";
-        giftMsg.style.opacity = '1';
-        giftMsg.style.transform = 'translateY(0)';
-      });
+  [wrongIdx, correctHolder].forEach(i => {
+    const el = grid.children[i];
+    if (el) {
+      el.classList.add('hint-flash');
+      hintTimeout = setTimeout(() => el.classList.remove('hint-flash'), 600);
     }
+  });
+});
 
-    // ── CONSOLE EASTER EGG ──
-    console.log("%cHey birthday girl! 🎂", "color: #D4788A; font-size: 30px; font-weight: bold; font-family: sans-serif;");
-    console.log("%cI knew you'd be snooping around here. Happy Birthday! - Your Best Friend", "color: #B0687A; font-size: 16px; font-style: italic;");
+// ── DIFFICULTY CONFIG ──
+document.querySelectorAll('.diff-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    N = parseInt(btn.dataset.n);
+    initPuzzle();
+  });
+});
+
+window.addEventListener('resize', () => {
+  if (!solved) renderGrid();
+});
+
+// ── STICKER INTERACTIONS ──
+document.querySelectorAll('.sticker').forEach(st => {
+  st.addEventListener('click', (e) => {
+    confetti({
+      particleCount: 40,
+      spread: 50,
+      origin: { x: e.clientX / window.innerWidth, y: e.clientY / window.innerHeight },
+      colors: ['#f2c4c4', '#d4788a', '#8aad9a', '#c89d6a', '#b0687a']
+    });
+  });
+});
+
+// ── DODGING GIFT BUTTON ──
+const giftBtn = document.getElementById('gift-btn');
+const giftMsg = document.getElementById('gift-msg');
+let hoverCount = 0;
+const maxHovers = ('ontouchstart' in window) || (window.innerWidth <= 480) ? 2 : 6;
+
+if (giftBtn) {
+  const moveBtn = () => {
+    if (hoverCount >= maxHovers) return;
+
+    hoverCount++;
+    const container = giftBtn.parentElement;
+    const containerRect = container.getBoundingClientRect();
+
+    const maxX = containerRect.width / 2 - giftBtn.offsetWidth / 2;
+    const maxY = 60;
+
+    const randomX = (Math.random() - 0.5) * maxX * 2.5;
+    const randomY = (Math.random() - 0.5) * maxY * 2.5;
+
+    giftBtn.style.transform = `translate(${randomX}px, ${randomY}px)`;
+
+    const teases = ["Too slow! 🐢", "Almost! 😜", "Try again! 😂", "Missed me! 💨", "You're bad at this 🤡", "Okay fine... 🙄"];
+    if (hoverCount <= teases.length) {
+      giftBtn.textContent = teases[hoverCount - 1];
+    }
+  };
+
+  giftBtn.addEventListener('mouseover', moveBtn);
+  giftBtn.addEventListener('touchstart', (e) => {
+    if (hoverCount < maxHovers) {
+      e.preventDefault();
+      moveBtn();
+    }
+  });
+
+  giftBtn.addEventListener('click', () => {
+    confetti({ particleCount: 200, spread: 100, origin: { y: 0.6 } });
+    giftBtn.style.display = 'none';
+    giftMsg.innerHTML = "Your gift is my presence in your life.<br/>You're welcome. 😎✨";
+    giftMsg.style.opacity = '1';
+    giftMsg.style.transform = 'translateY(0)';
+  });
+}
+
+// ── CONSOLE EASTER EGG ──
+console.log("%cHey birthday girl! 🎂", "color: #D4788A; font-size: 30px; font-weight: bold; font-family: sans-serif;");
+console.log("%cI knew you'd be snooping around here. Happy Birthday! - Your Best Friend", "color: #B0687A; font-size: 16px; font-style: italic;");
