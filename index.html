@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport"
     content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover" />
-  <title>For My Best Friend 🎂</title>
+  <title>Tatti Diwas</title>
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -23,33 +23,23 @@
 
 <body class="hero-bg scratch-active">
 
-  <!-- SCRATCH / ERASE OVERLAY (FULLSCREEN FINGER.GIF) -->
-  <div id="scratch-overlay">
+  <!-- TROLL OVERLAY (FULLSCREEN FINGER.GIF - TOUCH/TAP TO REVEAL) -->
+  <div id="scratch-overlay" class="tap-reveal-overlay" role="button" tabindex="0" title="Tap anywhere to reveal!">
     <div class="scratch-blurred-bg" style="background-image: url('assests/finger.gif');"></div>
     <img src="assests/finger.gif" alt="Surprise!" id="scratch-bg-gif" class="scratch-fullscreen-gif" />
 
     <div class="scratch-ui-overlay">
       <!-- Funky Name Animated Headline (Only visible when GIF is present) -->
       <div class="funky-name-container">
-        <span class="funky-tagline">🔥 Special Birthday Dedication 🔥</span>
-        <h1 id="funky-name-display" class="funky-name-title">Happy Birthday Tatti 💩</h1>
+        <span class="funky-tagline">Zyada expectation to nhi rakhi thi n </span>
+        <h1 id="funky-name-display" class="funky-name-title">Guhh kha le gawar💩</h1>
       </div>
 
-      <!-- Minimal Sleek Erase Helper -->
-      <div class="scratch-bottom-bar">
-        <div class="scratch-mini-meter">
-          <span class="eraser-icon">🧽</span>
-          <span class="scratch-hint-text">Rub to Erase:</span>
-          <span id="scratch-pct-text" class="scratch-pct-badge">0%</span>
-        </div>
-        <button id="btn-quick-erase" class="scratch-skip-btn">
-          ✨ Quick Reveal ✨
-        </button>
+      <!-- Floating Touch/Tap Prompt -->
+      <div class="scratch-tap-hint">
+        <span class="tap-pulse-icon">👆</span> Tap / Touch anywhere to reveal ✨
       </div>
     </div>
-
-    <!-- Interactive Scratch Eraser Canvas -->
-    <canvas id="scratch-canvas"></canvas>
   </div>
 
   <div id="scroll-progress"></div>
@@ -58,8 +48,13 @@
   <div id="cursor"></div>
   <div id="cursor-ring"></div>
 
-  <audio id="bg-music" loop>
-    <source src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg">
+  <audio id="bg-music" loop preload="auto">
+    <source src="assests/bgmusic.mpeg" type="audio/mpeg">
+  </audio>
+
+  <!-- Troll overlay audio (plays immediately on page load) -->
+  <audio id="faah-audio" preload="auto" autoplay>
+    <source src="assests/faah.mpeg" type="audio/mpeg">
   </audio>
 
   <audio id="swap-sound" preload="auto">
@@ -100,18 +95,18 @@
     <div
       class="relative z-10 max-w-2xl mx-auto backdrop-blur-md bg-white/40 border border-white/60 rounded-3xl p-6 sm:p-10 md:p-16 shadow-[0_24px_80px_rgba(42,31,26,0.06)]"
       style="animation: fadeUp 1.2s cubic-bezier(0.16,1,0.3,1) both;">
-      <p class="section-label mb-6">A Journey of Art & Friendship</p>
+      <p class="section-label mb-6">Khi Khi Khi Khi</p>
 
       <h1 id="hb-title" class="font-display text-6xl sm:text-8xl md:text-[110px] leading-none mb-4 sm:mb-6">
       </h1>
 
-      <p
+      <!-- <p
         class="text-base md:text-lg text-[color:var(--ink)] opacity-60 font-light leading-relaxed mb-3 max-w-md mx-auto">
         Some moments are too special to live only in camera rolls.<br />
         I made this for you. Scroll down.
-      </p>
+      </p> -->
       <p class="text-sm italic opacity-45 font-light mb-14 max-w-md mx-auto">
-        Warning: contains unsolicited art critique from someone who can't draw a stick figure.
+        Warning: Bejatti apne tak hi rakhni h to akele hi dekhiyo.
       </p>
 
       <a href="#timeline" class="inline-flex items-center gap-2 text-sm opacity-50 hover:opacity-90 transition-opacity"
@@ -125,7 +120,8 @@
   <section id="timeline" class="max-w-5xl mx-auto py-12 sm:py-24 px-4 sm:px-6 relative">
     <div class="text-center mb-20 fade-up">
       <p class="section-label mb-3">Our Story</p>
-      <h2 class="font-display text-3xl sm:text-5xl md:text-6xl" style="color:var(--ink)">Moments I'll Never Forget</h2>
+      <h2 class="font-display text-3xl sm:text-5xl md:text-6xl" style="color:var(--ink)">Moments you should Never Forget
+        about yourself</h2>
       <p class="opacity-50 font-light text-sm mt-4 max-w-md mx-auto italic">
         (Unlike you, who forgot my birthday in 2022. We don't talk about that.)
       </p>
@@ -183,7 +179,7 @@
         </div>
 
         <div class="flex gap-3 mt-6 w-full">
-          <button id="btn-hint" class="btn-secondary flex-1">Hint (you'll need it)</button>
+          <button id="btn-hint" class="btn-secondary flex-1">Hint (tujhe zaroorat to padegi hi)</button>
         </div>
       </div>
     </div>
@@ -192,7 +188,7 @@
   <section class="max-w-2xl mx-auto py-12 sm:py-24 px-4 sm:px-6 hidden" id="letter-section">
     <div class="text-center mb-8 sm:mb-12 fade-up">
       <p class="section-label mb-3">Just For You</p>
-      <h2 class="font-display text-3xl sm:text-5xl md:text-6xl" style="color:var(--ink)">A Letter From The Heart</h2>
+      <h2 class="font-display text-3xl sm:text-5xl md:text-6xl" style="color:var(--ink)">A Letter</h2>
     </div>
 
     <div class="fade-up delay-1" id="letter-card">
@@ -238,20 +234,37 @@
   </section>
 
   <div id="secret-popup">
-    <div class="secret-letter font-display text-lg" style="color:var(--ink); line-height:32px;">
-      <span class="close-secret" id="close-secret">×</span>
-      <p class="italic text-2xl mb-4" style="line-height:1.6; color:var(--mauve);">A Secret Note Just For You... 💌</p>
+    <div class="secret-letter font-display">
+      <span class="close-secret" id="close-secret" title="Close">×</span>
+
+      <p class="italic secret-note-title mb-4 font-semibold" style="color:var(--mauve);">Aisa likhne ka Mann nhi tha but..</p>
+
+      <!-- DUO image -->
+      <div class="mb-5 flex justify-center secret-duo-wrap">
+        <img src="assests/DUO.jpeg" alt="The Duo"
+             class="secret-duo-img rounded-2xl shadow-md" />
+      </div>
+
       <p class="mb-4">
-        You found my hidden easter egg! Ten taps. TEN. You really had nothing better to do, huh?
+        Dekh Bhai.<br/>
+        Zyada to kya hi bola Jaye suwaron ko. It's like bhaisiya k aage bin bajana.
       </p>
       <p class="mb-4">
-        I hid this here because I know how curious (read: nosy) you are. Thank you for always exploring life with me
-        and never losing your sense of wonder, or your ability to find every single secret button on every website
-        ever made.
+        Khair ye bda prashan h ki Mai exhibition dekhne k liye jata hu ya bas apne room se bahar nikalne k liye kahin bhi chala jata hu.
       </p>
-      <p class="mt-6 text-xl italic">
-        Love you always (annoyingly so),<br />
-        <span class="text-2xl" style="color:var(--rose)">Your Best Friend</span>
+      <p class="mb-4">
+        Or us din sham me call Kar k sorry bolne ki zaroorat bhi nhi thi 😂, itna to understanding hai hi ki kis baat ko kitna value dena h.
+      </p>
+      <p class="mb-4">
+        Rishikesh me girane k baad ya daal jalane k baad ya mere kiye hue pe dobara paint karne k baad, thoda sa zyada hi gussa aaya hoga tujhe 😂. Jaa Bhai maafi mil gyi tujhe mere taraf se.
+      </p>
+      <p class="mb-6">
+        Agar yaha tak pahuch hi gyi h to <strong style="color:var(--rose);">"got it"</strong> ka text bhi dal diye. 😄
+      </p>
+
+      <p class="mt-6 text-xl italic secret-signoff">
+        le fir,<br />
+        <span class="text-2xl" style="color:var(--rose);">Your Best Friend</span>
       </p>
     </div>
   </div>
@@ -261,8 +274,7 @@
       <h3 id="roast-title" class="font-puzzle text-5xl mb-3 text-[color:var(--rose)]">Chiiii Gawar !!</h3>
       <p id="roast-line" class="font-display text-2xl mb-8 opacity-80" style="color:var(--ink);">Dimag nhi hai kya? 🤡
       </p>
-      <button id="close-roast" class="btn-primary w-full" style="font-size: 1rem;">I'm sorry, show me the hint
-        😭</button>
+      <button id="close-roast" class="btn-primary w-full" style="font-size: 1rem;">Please show me the hint. Prabhu!!</button>
     </div>
   </div>
 
