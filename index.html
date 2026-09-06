@@ -125,7 +125,7 @@
       <h2 class="font-display text-3xl sm:text-5xl md:text-6xl" style="color:var(--ink)">Moments you should Never Forget
         about yourself</h2>
       <p class="opacity-50 font-light text-sm mt-4 max-w-md mx-auto italic">
-        (Just like you forget the face of your GAY crush. We don't talk about that.)
+        (Just like you never forget the faces of your GAY crushes. We don't talk about that... 😂🤣🤣)
       </p>
     </div>
 
@@ -140,16 +140,17 @@
         <p class="section-label mb-3">Maksad nhi bhulna Paayijaan</p>
         <h2 class="font-display text-4xl md:text-5xl mb-4" style="color:var(--ink)">🔓 Puzzle Unlock</h2>
         <p class="opacity-60 font-light max-w-md mx-auto text-sm leading-relaxed mb-2">
-          Scrambled one of my memories, Let's see if you too have this in your hard disk. Arrange the full picture pieces to unlock your birthday surprise.
+          Scrambled one of my memories, Let's see if you too have this in your hard disk. Arrange the full picture
+          pieces to unlock your birthday surprise.
         </p>
         <p class="opacity-45 font-light max-w-md mx-auto text-xs italic mb-6">
-           Tap two tiles to swap them.
+          Tap two tiles to swap them.
         </p>
 
         <div id="diff-wrap" class="flex flex-wrap gap-2 justify-center mb-6">
-          <button class="diff-btn active" data-n="3">3×3 (Easy)</button>
+          <button class="diff-btn" data-n="3">3×3</button>
           <button class="diff-btn" data-n="4">4×4 Grid</button>
-          <button class="diff-btn" data-n="5">5×5 (Hard)</button>
+          <button class="diff-btn active" data-n="5">5×5 (easy)</button>
         </div>
       </div>
 
@@ -189,7 +190,7 @@
   <section class="max-w-2xl mx-auto py-12 sm:py-24 px-4 sm:px-6 hidden" id="letter-section">
     <div class="text-center mb-8 sm:mb-12 fade-up">
       <p class="section-label mb-3">Just For You</p>
-      <h2 class="font-display text-3xl sm:text-5xl md:text-6xl" style="color:var(--ink)">A Letter</h2>
+      <h2 class="font-display text-3xl sm:text-5xl md:text-6xl" style="color:var(--ink)">A Letter from God</h2>
     </div>
 
     <div class="fade-up delay-1" id="letter-card">
@@ -238,26 +239,33 @@
     <div class="secret-letter font-display">
       <span class="close-secret" id="close-secret" title="Close">×</span>
 
-      <p class="italic secret-note-title mb-4 font-semibold" style="color:var(--mauve);">Aisa likhne ka Mann nhi tha but..</p>
+      <p class="italic secret-note-title mb-4 font-semibold" style="color:var(--mauve);">Aisa likhne ka Mann to nhi tha
+        but..</p>
 
       <!-- DUO image -->
       <div class="mb-5 flex justify-center secret-duo-wrap">
-        <img src="assests/DUO.jpeg" alt="The Duo"
-             class="secret-duo-img rounded-2xl shadow-md" />
+        <img src="assests/DUO.jpeg" alt="The Duo" class="secret-duo-img rounded-2xl shadow-md" />
       </div>
 
       <p class="mb-4">
-        Dekh Bhai.<br/>
+        Dekh Bhai.<br />
         Zyada to kya hi bola Jaye suwaron ko. It's like bhaisiya k aage bin bajana.
       </p>
       <p class="mb-4">
-        Khair ye bda prashan h ki Mai exhibition dekhne k liye jata hu ya bas apne room se bahar nikalne k liye kahin bhi chala jata hu.
+        Khair ye bda prashan h ki Mai exhibition dekhne k liye jata hu ya bas apne room se bahar nikalne k liye kahin
+        bhi chala jata hu.
       </p>
       <p class="mb-4">
-        Or us din sham me call Kar k sorry bolne ki zaroorat bhi nhi thi 😂, itna to understanding hai hi ki kis baat ko kitna value dena h.
+        Or us din sham me call Kar k sorry bolne ki zaroorat bhi nhi thi 😂, itna to understanding hai hi ki kis baat ko
+        kitna value dena h.
       </p>
       <p class="mb-4">
-        Rishikesh me girane k baad ya daal jalane k baad ya mere kiye hue pe dobara paint karne k baad, thoda sa zyada hi gussa aaya hoga tujhe 😂. Jaa Bhai maafi mil gyi tujhe mere taraf se.
+        Or kya hi bolein.. bas .. DHANIYABAAD keh sakte hain.
+      </p>
+      <p class="mb-4">
+        Rishikesh me girane k baad ya daal jalane k baad ya mere kiye hue pe dobara paint karne k baad, thoda sa zyada
+        hi gussa aaya hoga tujhe.
+        Sorry bhi bolna hoga ?
       </p>
       <p class="mb-6">
         Agar yaha tak pahuch hi gyi h to <strong style="color:var(--rose);">"got it"</strong> ka text bhi dal diye. 😄
@@ -275,7 +283,17 @@
       <h3 id="roast-title" class="font-puzzle text-5xl mb-3 text-[color:var(--rose)]">Chiiii Gawar !!</h3>
       <p id="roast-line" class="font-display text-2xl mb-8 opacity-80" style="color:var(--ink);">Dimag nhi hai kya? 🤡
       </p>
-      <button id="close-roast" class="btn-primary w-full" style="font-size: 1rem;">Please show me the hint. Prabhu!!</button>
+      <button id="close-roast" class="btn-primary w-full" style="font-size: 1rem;">Please show me the hint.
+        Prabhu!!</button>
+    </div>
+  </div>
+
+  <!-- DIFFICULTY / INTELLIGENCE ROAST POPUP -->
+  <div id="diff-roast-popup">
+    <div class="roast-card">
+      <h3 id="diff-roast-title" class="font-puzzle text-4xl sm:text-5xl mb-3 text-[color:var(--rose)]"></h3>
+      <p id="diff-roast-line" class="font-display text-xl sm:text-2xl mb-8 opacity-80" style="color:var(--ink);"></p>
+      <button id="close-diff-roast" class="btn-primary w-full" style="font-size: 1rem;"></button>
     </div>
   </div>
 

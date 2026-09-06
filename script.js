@@ -84,14 +84,15 @@ function initTrollOverlay() {
   // ── Play faah audio (attempts immediate play + unlocks on any early interaction) ──
   function playFaahAudio() {
     if (!faahAudio || faahPlayed) return;
+    faahPlayed = true; // set BEFORE play() so a second handler in the same tap can't re-trigger it
+
     faahAudio.volume = 0.95;
-    faahAudio.currentTime = 0;
+    try { faahAudio.currentTime = 0; } catch (err) { /* not ready yet, ignore */ }
+
     const p = faahAudio.play();
     if (p !== undefined) {
-      p.then(() => {
-        faahPlayed = true;
-      }).catch(() => {
-        // Browser blocked autoplay on this domain; will play on first user gesture.
+      p.catch(() => {
+        faahPlayed = false;
       });
     }
   }
@@ -240,74 +241,95 @@ if (document.readyState === 'loading') {
 const memories = [
   {
     date: "Chapter 1 · 2 Photos",
-    title: "Where It All Began",
-    description: "Throwing it back to the golden days. We had no idea we'd end up this chaotic together.",
+    title: "To chaliye shuru karte hain",
+    description: "Ek sawal tha ki tu bachpan se hi suar thi ya idhar aa kar bni.. I think I got the answer 😂😂.",
     images: ["assests/old1.jpeg", "assests/old2.jpeg"],
     image_url: "assests/old1.jpeg",   // thumbnail shown on card
     emoji: "🌸"
   },
   {
     date: "Live Drama",
-    title: "Pure Unfiltered Chaos",
-    description: "Exhibit A: Why we can never be left alone in public without causing a funny scene.",
+    title: "Unfiltered Gobar",
+    description: "Manjil ko bhula kar jiya to kya jiya.",
     video_url: "assests/vid_1.mp4",
     emoji: "🎬"
   },
   {
-    date: "Trip Diaries",
-    title: "Dehradun Escape",
-    description: "Chilly breeze, scenic mountain roads, getting lost, and making memories that stay forever.",
+    date: "Trippyy competition",
+    title: "Dehradun water com(edy)petition",
+    description: "Ye shayad humara phle group photo tha teeno ka",
     image_url: "assests/dehradun.jpeg",
     emoji: "🏔️"
   },
   {
-    date: "Foodie Files",
+    date: "Trip Diaries · 2 Photos",
+    title: "Isme maza kaafi aaya tha 😂, bhuli to nhi hai n tu🤣",
+    description: "Manjil ko bhula kar jiya to kya jiya.",
+    images: ["assests/dehradundrive.jpeg", "assests/rishikeshfall.jpeg"],
+    image_url: "assests/dehradundrive.jpeg",   // thumbnail shown on card
+    emoji: "🏔️"
+  },
+  {
+    date: "Suari Foodie · Photo & Video",
     title: "Soya Chaap & Food Cravings",
-    description: "Our mutual love for delicious food and never-ending street food dates. Zero regrets.",
+    description: "Maza to aata hai lapetne me. Certified comedy moments & zero regrets.",
     image_url: "assests/soyachap.jpeg",
+    media: [
+      { type: "image", url: "assests/soyachap.jpeg" },
+      { type: "video", url: "assests/vid_3.mp4" }
+    ],
     emoji: "🍢"
   },
   {
     date: "Vibe Check",
-    title: "Crazy Laughs & Good Times",
-    description: "Those random moments where we laughed so hard our stomachs hurt.",
+    title: "Crazy Laughs & pta nhi good ya bad Times",
+    description: "Ye to yaad hi hoga😂🤣🤣",
     video_url: "assests/vid_2.mp4",
     emoji: "✨"
   },
   {
-    date: "Partners in Crime",
-    title: "The Dynamic Duo",
-    description: "Through every high, low, and silly phase — always got your back (and ready to roast you).",
-    image_url: "assests/DUO.jpeg",
-    emoji: "👯"
-  },
-  {
-    date: "Comedy Central",
-    title: "Never a Dull Moment",
-    description: "Certified comedy. If our phone galleries ever leak, our reputations are over.",
-    video_url: "assests/vid_3.mp4",
-    emoji: "🍿"
-  },
-  {
-    date: "Squad Goals",
-    title: "The Trio & Future Adventures",
-    description: "To a million more memories, endless jokes, and you living your happiest life. Happy Birthday!",
+    date: "Squad Goals Ho Sakta tha... khair",
+    title: "The Trio 👯‍♂️ 👯‍♀️",
+    description: "is din koi ro rha tha 😂🤣😂",
     image_url: "assests/thetrio.jpeg",
     emoji: "🎀"
   }
 ];
 
+// Helper to normalize media items for any memory
+function getMemoryItems(m) {
+  if (!m) return [];
+  if (m.media && m.media.length) {
+    return m.media.map(item => (typeof item === 'string' ? {
+      url: item,
+      type: item.match(/\.(mp4|webm|ogg)$/i) ? 'video' : 'image'
+    } : item));
+  }
+  if (m.images && m.images.length) {
+    return m.images.map(img => ({ type: 'image', url: img }));
+  }
+  if (m.video_url) {
+    return [{ type: 'video', url: m.video_url, poster: m.image_url }];
+  }
+  if (m.image_url) {
+    return [{ type: 'image', url: m.image_url }];
+  }
+  return [];
+}
+
 // Image for the puzzle board
-const IMG_SRC = "assests/bgimage.jpeg"
+const IMG_SRC = "assests/bgimage.jpeg";
 
 // ── RENDER MEMORIES ──
 const container = document.getElementById('memories-container');
 
 memories.forEach((m, i) => {
   const isEven = i % 2 === 0;
+  const items = getMemoryItems(m);
+  const isMulti = items.length > 1;
 
   let mediaHtml = '';
-  if (m.video_url) {
+  if (!isMulti && m.video_url) {
     mediaHtml = `
           <div class="relative w-full h-56 md:h-64 overflow-hidden rounded-[2px] bg-black video-container">
             <video src="${m.video_url}" 
@@ -339,13 +361,16 @@ memories.forEach((m, i) => {
           </div>
         `;
   } else {
-    const photoCount = m.images ? m.images.length : 1;
-    const countBadge = photoCount > 1
-      ? `<span class="absolute top-2 right-2 z-10 bg-black/60 text-white text-xs font-bold px-2 py-0.5 rounded-full backdrop-blur-sm">📷 ${photoCount}</span>`
-      : '';
+    const hasVideo = items.some(it => it.type === 'video' || (it.url && it.url.match(/\.(mp4|webm|ogg)$/i)));
+    let countBadge = '';
+    if (isMulti) {
+      const badgeText = hasVideo ? '📷 + 🎬 2' : `📷 ${items.length}`;
+      countBadge = `<span class="absolute top-2 right-2 z-10 bg-black/65 text-white text-xs font-semibold px-2.5 py-0.5 rounded-full backdrop-blur-md shadow flex items-center gap-1">${badgeText}</span>`;
+    }
+    const coverUrl = m.image_url || (items[0] && items[0].url);
     mediaHtml = `
           <div class="relative w-full h-56 md:h-64 overflow-hidden rounded-[2px]">
-            <img src="${m.image_url}" alt="${m.title}"
+            <img src="${coverUrl}" alt="${m.title}"
                  class="w-full h-full object-cover block"
                  loading="lazy" />
             ${countBadge}
@@ -378,7 +403,7 @@ memories.forEach((m, i) => {
 
 // ── MEDIA LIGHTBOX (POPUP FOR IMAGES & VIDEOS) ──
 let currentLightboxIndex = 0;
-let currentSubImageIndex = 0;  // for multi-image galleries
+let currentSubImageIndex = 0;  // for multi-item galleries
 
 function renderLightboxContent(memoryIdx, subIdx = 0) {
   const m = memories[memoryIdx];
@@ -396,30 +421,52 @@ function renderLightboxContent(memoryIdx, subIdx = 0) {
 
   if (!wrap) return;
 
-  // ── Multi-image gallery ──
-  if (m.images && m.images.length > 1) {
-    const imgs = m.images;
-    currentSubImageIndex = Math.max(0, Math.min(subIdx, imgs.length - 1));
+  const items = getMemoryItems(m);
 
-    const dots = imgs.map((_, di) =>
-      `<span class="inline-block w-2 h-2 rounded-full transition-all duration-200 ${
-        di === currentSubImageIndex ? 'bg-[var(--rose)] scale-125' : 'bg-gray-300'
-      }" style="margin:0 3px;"></span>`
-    ).join('');
+  // ── Multi-item gallery (images, videos, or mixed) ──
+  if (items.length > 1) {
+    currentSubImageIndex = Math.max(0, Math.min(subIdx, items.length - 1));
+    const currentItem = items[currentSubImageIndex];
+    const isVideo = currentItem.type === 'video' || (currentItem.url && currentItem.url.match(/\.(mp4|webm|ogg)$/i));
+
+    const dots = items.map((it, di) => {
+      const itIsVideo = it.type === 'video' || (it.url && it.url.match(/\.(mp4|webm|ogg)$/i));
+      const icon = itIsVideo ? '🎬' : '📷';
+      return `<button type="button" class="gallery-dot-btn inline-flex items-center gap-1 px-2.5 py-0.5 rounded-full text-[11px] transition-all duration-200 cursor-pointer ${di === currentSubImageIndex
+        ? 'bg-[var(--rose)] text-white font-bold shadow-sm scale-105'
+        : 'bg-black/20 text-gray-700 hover:bg-black/30'
+        }" data-sub="${di}" style="margin:0 3px;"><span>${icon}</span> <span>${di + 1}</span></button>`;
+    }).join('');
+
+    let mediaElement = '';
+    if (isVideo) {
+      mediaElement = `
+        <div class="relative w-full flex items-center justify-center">
+          <video id="gallery-vid" src="${currentItem.url}"
+                 controls autoplay playsinline
+                 ${currentItem.poster ? `poster="${currentItem.poster}"` : ''}
+                 class="w-full max-h-[55vh] object-contain block rounded-[12px] bg-black/40"></video>
+        </div>
+      `;
+      pauseBackgroundMusic();
+    } else {
+      mediaElement = `
+        <img id="gallery-img" src="${currentItem.url}" alt="${m.title}"
+             class="w-full max-h-[55vh] object-contain block rounded-[12px]"
+             style="transition:opacity 0.25s ease;" />
+      `;
+      resumeBackgroundMusic();
+    }
 
     wrap.innerHTML = `
       <div class="relative w-full" id="gallery-wrap">
-        <img id="gallery-img" src="${imgs[currentSubImageIndex]}" alt="${m.title}"
-             class="w-full max-h-[55vh] object-contain block rounded-[12px]"
-             style="transition:opacity 0.25s ease;" />
+        ${mediaElement}
 
-        ${imgs.length > 1 ? `
-          <button id="gallery-prev" class="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center text-gray-700 text-lg hover:bg-rose-100 transition-colors z-10" aria-label="Previous photo">‹</button>
-          <button id="gallery-next" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center text-gray-700 text-lg hover:bg-rose-100 transition-colors z-10" aria-label="Next photo">›</button>
-        ` : ''}
+        <button id="gallery-prev" class="absolute left-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center text-gray-700 text-lg hover:bg-rose-100 transition-colors z-10 cursor-pointer" aria-label="Previous item">‹</button>
+        <button id="gallery-next" class="absolute right-2 top-1/2 -translate-y-1/2 w-9 h-9 rounded-full bg-white/90 shadow flex items-center justify-center text-gray-700 text-lg hover:bg-rose-100 transition-colors z-10 cursor-pointer" aria-label="Next item">›</button>
 
-        <div class="text-center mt-3">${dots}
-          <span class="text-xs text-gray-400 ml-2">${currentSubImageIndex + 1} / ${imgs.length}</span>
+        <div class="text-center mt-3 flex items-center justify-center flex-wrap gap-1">
+          ${dots}
         </div>
       </div>
     `;
@@ -428,22 +475,33 @@ function renderLightboxContent(memoryIdx, subIdx = 0) {
     const gPrev = wrap.querySelector('#gallery-prev');
     const gNext = wrap.querySelector('#gallery-next');
     const gImg = wrap.querySelector('#gallery-img');
+    const gVid = wrap.querySelector('#gallery-vid');
 
-    function goToSubImage(newSub) {
-      if (!gImg) return;
-      gImg.style.opacity = '0';
+    function goToSubItem(newSub) {
+      if (gVid) gVid.pause();
+      if (gImg) gImg.style.opacity = '0';
       setTimeout(() => {
         renderLightboxContent(memoryIdx, newSub);
-      }, 200);
+      }, 150);
     }
 
     if (gPrev) gPrev.addEventListener('click', (e) => {
       e.stopPropagation();
-      goToSubImage((currentSubImageIndex - 1 + imgs.length) % imgs.length);
+      goToSubItem((currentSubImageIndex - 1 + items.length) % items.length);
     });
     if (gNext) gNext.addEventListener('click', (e) => {
       e.stopPropagation();
-      goToSubImage((currentSubImageIndex + 1) % imgs.length);
+      goToSubItem((currentSubImageIndex + 1) % items.length);
+    });
+
+    wrap.querySelectorAll('.gallery-dot-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const sub = parseInt(btn.getAttribute('data-sub'), 10);
+        if (!isNaN(sub) && sub !== currentSubImageIndex) {
+          goToSubItem(sub);
+        }
+      });
     });
 
     // Touch swipe for gallery
@@ -452,26 +510,27 @@ function renderLightboxContent(memoryIdx, subIdx = 0) {
     wrap.addEventListener('touchend', (e) => {
       const dx = e.changedTouches[0].clientX - touchStartX;
       if (Math.abs(dx) > 40) {
-        goToSubImage(dx < 0
-          ? (currentSubImageIndex + 1) % imgs.length
-          : (currentSubImageIndex - 1 + imgs.length) % imgs.length
+        goToSubItem(dx < 0
+          ? (currentSubImageIndex + 1) % items.length
+          : (currentSubImageIndex - 1 + items.length) % items.length
         );
       }
     }, { passive: true });
 
-  } else if (m.video_url) {
+  } else if (items.length === 1 && (items[0].type === 'video' || (items[0].url && items[0].url.match(/\.(mp4|webm|ogg)$/i)))) {
     wrap.innerHTML = `
-      <video src="${m.video_url}"
+      <video src="${items[0].url}"
              controls autoplay playsinline
-             ${m.image_url ? `poster="${m.image_url}"` : ''}
+             ${items[0].poster || m.image_url ? `poster="${items[0].poster || m.image_url}"` : ''}
              class="w-full max-h-[55vh] object-contain block rounded-[12px]"></video>
     `;
     pauseBackgroundMusic();
-  } else {
+  } else if (items.length === 1) {
     wrap.innerHTML = `
-      <img src="${m.image_url}" alt="${m.title}"
+      <img src="${items[0].url}" alt="${m.title}"
            class="w-full max-h-[55vh] object-contain block rounded-[12px]" />
     `;
+    resumeBackgroundMusic();
   }
 }
 
@@ -528,15 +587,16 @@ function initMediaLightbox() {
     if (!modal || !modal.classList.contains('active')) return;
     if (e.key === 'Escape') closeMediaLightbox();
     const m = memories[currentLightboxIndex];
-    // Left/Right navigate sub-images first, then switch memories
+    const items = getMemoryItems(m);
+    // Left/Right navigate sub-items first, then switch memories
     if (e.key === 'ArrowLeft') {
-      if (m && m.images && m.images.length > 1) {
-        renderLightboxContent(currentLightboxIndex, (currentSubImageIndex - 1 + m.images.length) % m.images.length);
+      if (items.length > 1) {
+        renderLightboxContent(currentLightboxIndex, (currentSubImageIndex - 1 + items.length) % items.length);
       } else if (prevBtn) prevBtn.click();
     }
     if (e.key === 'ArrowRight') {
-      if (m && m.images && m.images.length > 1) {
-        renderLightboxContent(currentLightboxIndex, (currentSubImageIndex + 1) % m.images.length);
+      if (items.length > 1) {
+        renderLightboxContent(currentLightboxIndex, (currentSubImageIndex + 1) % items.length);
       } else if (nextBtn) nextBtn.click();
     }
   });
@@ -1346,7 +1406,7 @@ function playEq() { if (eqDisplay) eqDisplay.classList.remove('eq-paused'); }
 function pauseEq() { if (eqDisplay) eqDisplay.classList.add('eq-paused'); }
 
 // ── IDLE FLOATERS ──
-const nicknames = ['tattt', 'suar', 'bhaisiya', 'gawar', 'gobar', 'gadhi'];
+const nicknames = ['tattti', 'suar', 'bhaisiya', 'gawar', 'gobar', 'gadhi'];
 const floaterText = document.getElementById('floater-text');
 const funkyColors = ['var(--rose)', 'var(--mauve)', 'var(--sage)', 'var(--gold)'];
 
@@ -1387,7 +1447,7 @@ floaterText.addEventListener('click', (e) => {
 setInterval(showFloater, isMobile ? 5000 : 3500);
 
 // ── PUZZLE MECHANICS ──
-let N = 3;
+let N = 5;
 let tiles = [];
 let selectedIdx = null;
 let moves = 0;
@@ -1619,15 +1679,77 @@ document.getElementById('close-roast').addEventListener('click', () => {
   });
 });
 
-// ── DIFFICULTY CONFIG ──
+// ── DIFFICULTY CONFIG & INTELLIGENCE ROAST ──
+const diffRoastPopup = document.getElementById('diff-roast-popup');
+const diffRoastTitle = document.getElementById('diff-roast-title');
+const diffRoastLine = document.getElementById('diff-roast-line');
+const closeDiffRoast = document.getElementById('close-diff-roast');
+
+const roasts3x3 = [
+  {
+    title: "Aukaat Pata Chal Gyi? 🍼",
+    line: "3×3?? Itna aasan to Pogo dekhne wale bachhe bhi 2 second me solve kar lete hain... Dimag ghutne me hai kya? 🤡",
+    btn: "Sharam bech khayi, lagao 3×3 😭"
+  },
+  {
+    title: "Chiiii Gawar !! 💀",
+    line: "Itna low effort? Khud ko artist bolti hai aur 3×3 pe compromise? Couldn't be me. 💅",
+    btn: "Maaf karo Prabhu, 3×3 hi khelne do 🙏"
+  }
+];
+
+const roasts4x4 = [
+  {
+    title: "Compromise 😂",
+    line: "5×5 ki himmat nhi hui aur 3×3 me izzat ja rhi thi... to beech ka rasta 4×4 chun liya 😂🤡😂",
+    btn: "Zyada bakwas mat kar, 4×4 shuru kar"
+  }
+];
+
+let pendingN = 5;
+
 document.querySelectorAll('.diff-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
-    btn.classList.add('active');
-    N = parseInt(btn.dataset.n);
-    initPuzzle();
+    const targetN = parseInt(btn.dataset.n, 10);
+    if (targetN === N) return;
+
+    if (targetN === 3 || targetN === 4) {
+      pendingN = targetN;
+      const list = targetN === 3 ? roasts3x3 : roasts4x4;
+      const roast = list[Math.floor(Math.random() * list.length)];
+
+      if (diffRoastTitle) diffRoastTitle.textContent = roast.title;
+      if (diffRoastLine) diffRoastLine.textContent = roast.line;
+      if (closeDiffRoast) closeDiffRoast.textContent = roast.btn;
+
+      if (diffRoastPopup) diffRoastPopup.classList.add('active');
+    } else {
+      document.querySelectorAll('.diff-btn').forEach(b => b.classList.remove('active'));
+      btn.classList.add('active');
+      N = targetN;
+      initPuzzle();
+    }
   });
 });
+
+if (closeDiffRoast) {
+  closeDiffRoast.addEventListener('click', () => {
+    if (diffRoastPopup) diffRoastPopup.classList.remove('active');
+    document.querySelectorAll('.diff-btn').forEach(b => {
+      b.classList.toggle('active', parseInt(b.dataset.n, 10) === pendingN);
+    });
+    N = pendingN;
+    initPuzzle();
+  });
+}
+
+if (diffRoastPopup) {
+  diffRoastPopup.addEventListener('click', (e) => {
+    if (e.target === diffRoastPopup) {
+      closeDiffRoast.click();
+    }
+  });
+}
 
 window.addEventListener('resize', () => {
   if (!solved) renderGrid();
