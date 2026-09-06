@@ -81,15 +81,38 @@ function initTrollOverlay() {
   let isRevealed = false;
   let faahPlayed = false;
 
-  // ── Play faah audio on the first interaction (tap/click on the overlay) ──
-  // Browsers block autoplay; we play on first user gesture.
+  // ── Play faah audio (attempts immediate play + unlocks on any early interaction) ──
   function playFaahAudio() {
     if (!faahAudio || faahPlayed) return;
-    faahPlayed = true;
-    faahAudio.volume = 0.9;
+    faahAudio.volume = 0.95;
     faahAudio.currentTime = 0;
-    faahAudio.play().catch(() => { });
+    const p = faahAudio.play();
+    if (p !== undefined) {
+      p.then(() => {
+        faahPlayed = true;
+      }).catch(() => {
+        // Browser blocked autoplay on this domain; will play on first user gesture.
+      });
+    }
   }
+
+  // Try playing immediately as soon as troll overlay initializes
+  playFaahAudio();
+
+  // Also unlock on the very first touch/click/pointerdown anywhere on window
+  const earlyFaahUnlock = () => {
+    if (!faahPlayed && !isRevealed) {
+      playFaahAudio();
+    }
+    window.removeEventListener('pointerdown', earlyFaahUnlock, true);
+    window.removeEventListener('touchstart', earlyFaahUnlock, true);
+    window.removeEventListener('click', earlyFaahUnlock, true);
+    window.removeEventListener('keydown', earlyFaahUnlock, true);
+  };
+  window.addEventListener('pointerdown', earlyFaahUnlock, { once: true, capture: true });
+  window.addEventListener('touchstart', earlyFaahUnlock, { once: true, capture: true });
+  window.addEventListener('click', earlyFaahUnlock, { once: true, capture: true });
+  window.addEventListener('keydown', earlyFaahUnlock, { once: true, capture: true });
 
   function stopFaahAudio() {
     if (!faahAudio) return;
@@ -118,8 +141,8 @@ function initTrollOverlay() {
     if (isRevealed) return;
     isRevealed = true;
 
-    // Stop the faah audio when revealing
-    stopFaahAudio();
+    // Ensure faah has started if it was blocked by autoplay
+    playFaahAudio();
 
     if (x !== undefined && y !== undefined) {
       spawnTapParticle(x, y);
@@ -159,9 +182,22 @@ function initTrollOverlay() {
     overlay.classList.add('revealed');
     document.body.classList.remove('scratch-active');
 
-    // Start background music now that main page is revealed
-    if (typeof startMainBackgroundMusic === 'function') {
-      startMainBackgroundMusic();
+    // Start background music smoothly after faah audio completes (or after 1.8s)
+    let bgStarted = false;
+    const triggerMainMusic = () => {
+      if (bgStarted) return;
+      bgStarted = true;
+      stopFaahAudio();
+      if (typeof startMainBackgroundMusic === 'function') {
+        startMainBackgroundMusic();
+      }
+    };
+
+    if (faahAudio && !faahAudio.paused && !faahAudio.ended) {
+      faahAudio.addEventListener('ended', triggerMainMusic, { once: true });
+      setTimeout(triggerMainMusic, 2200); // Safety fallback so bg music always starts
+    } else {
+      triggerMainMusic();
     }
 
     setTimeout(() => {
@@ -171,14 +207,11 @@ function initTrollOverlay() {
   }
 
   // Click & Touch anywhere on overlay to reveal!
-  // Also plays faah audio on first interaction.
   overlay.addEventListener('click', (e) => {
-    playFaahAudio();
     revealOriginalPage(e.clientX, e.clientY);
   });
 
   overlay.addEventListener('touchstart', (e) => {
-    playFaahAudio();
     if (e.touches && e.touches.length > 0) {
       const t = e.touches[0];
       revealOriginalPage(t.clientX, t.clientY);
@@ -189,7 +222,6 @@ function initTrollOverlay() {
 
   overlay.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' || e.key === ' ' || e.key === 'Escape') {
-      playFaahAudio();
       revealOriginalPage();
     }
   });

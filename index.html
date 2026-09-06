@@ -31,7 +31,7 @@
     <div class="scratch-ui-overlay">
       <!-- Funky Name Animated Headline (Only visible when GIF is present) -->
       <div class="funky-name-container">
-        <span class="funky-tagline">Zyada expectation to nhi rakhi thi n </span>
+        <span class="funky-tagline">Zyada expectation to nhi rakha kar apun se</span>
         <h1 id="funky-name-display" class="funky-name-title">Guhh kha le gawar💩</h1>
       </div>
 
@@ -48,12 +48,14 @@
   <div id="cursor"></div>
   <div id="cursor-ring"></div>
 
-  <audio id="bg-music" loop preload="auto">
+  <audio id="bg-music" loop preload="auto" playsinline>
+    <source src="assests/bgmusic.mp3" type="audio/mpeg">
     <source src="assests/bgmusic.mpeg" type="audio/mpeg">
   </audio>
 
-  <!-- Troll overlay audio (plays immediately on page load) -->
-  <audio id="faah-audio" preload="auto" autoplay>
+  <!-- Troll overlay audio (plays immediately on page load / first tap) -->
+  <audio id="faah-audio" preload="auto" playsinline>
+    <source src="assests/faah.mp3" type="audio/mpeg">
     <source src="assests/faah.mpeg" type="audio/mpeg">
   </audio>
 
@@ -119,11 +121,11 @@
 
   <section id="timeline" class="max-w-5xl mx-auto py-12 sm:py-24 px-4 sm:px-6 relative">
     <div class="text-center mb-20 fade-up">
-      <p class="section-label mb-3">Our Story</p>
+      <!-- <p class="section-label mb-3">Our Story</p> -->
       <h2 class="font-display text-3xl sm:text-5xl md:text-6xl" style="color:var(--ink)">Moments you should Never Forget
         about yourself</h2>
       <p class="opacity-50 font-light text-sm mt-4 max-w-md mx-auto italic">
-        (Unlike you, who forgot my birthday in 2022. We don't talk about that.)
+        (Just like you forget the face of your GAY crush. We don't talk about that.)
       </p>
     </div>
 
@@ -135,14 +137,13 @@
   <section class="max-w-3xl mx-auto py-12 sm:py-24 px-4 sm:px-6" id="unlock-section">
     <div class="fade-up" id="unlock-card">
       <div class="text-center mb-12">
-        <p class="section-label mb-3">An Artist's Challenge</p>
+        <p class="section-label mb-3">Maksad nhi bhulna Paayijaan</p>
         <h2 class="font-display text-4xl md:text-5xl mb-4" style="color:var(--ink)">🔓 Puzzle Unlock</h2>
         <p class="opacity-60 font-light max-w-md mx-auto text-sm leading-relaxed mb-2">
-          Since you're the artist, I scrambled one of our memories. Arrange the full picture pieces to unlock your
-          birthday surprise. Tap two tiles to swap them.
+          Scrambled one of my memories, Let's see if you too have this in your hard disk. Arrange the full picture pieces to unlock your birthday surprise.
         </p>
         <p class="opacity-45 font-light max-w-md mx-auto text-xs italic mb-6">
-          Yes, this is harder than your art degree. Don't @ me.
+           Tap two tiles to swap them.
         </p>
 
         <div id="diff-wrap" class="flex flex-wrap gap-2 justify-center mb-6">
@@ -264,7 +265,7 @@
 
       <p class="mt-6 text-xl italic secret-signoff">
         le fir,<br />
-        <span class="text-2xl" style="color:var(--rose);">Your Best Friend</span>
+        <span class="text-2xl" style="color:var(--rose);">Your Devta Friend</span>
       </p>
     </div>
   </div>
